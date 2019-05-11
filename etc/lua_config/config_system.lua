@@ -19,6 +19,7 @@ config.gate.listen_addr = "0.0.0.0:51010"
 config.dbserver = {}
 config.dbserver.db_name = tostring(config.server.host_id)
 
+config.auth = {}
 config.auth.auth_count = 1
 
 return config

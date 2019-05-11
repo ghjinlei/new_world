@@ -5,7 +5,8 @@ Author : jinlei
 CreateTime : 2018-11-11 02:37:51
 Description :
 --]]
-local logger = require "common/logger.lua"
+local skynet = require "skynet"
+local logger = require "common.logger"
 
 local utils = {}
 
