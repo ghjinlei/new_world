@@ -8,7 +8,8 @@ Description :
 
 local lfs = require "lfs"
 
-function IsFileExist(path)
+local fs = {}
+function fs.IsFileExist(path)
 	local result = lfs.attributes(path)
 	if result and result.mode == "file" then
 		return true
@@ -16,12 +17,12 @@ function IsFileExist(path)
 	return false
 end
 
-function GetFileModifyTime(path)
+function fs.GetFileModifyTime(path)
 	local result = lfs.attributes(path)
 	return result and result.modification
 end
 
-function GetFileSize(path)
+function fs.GetFileSize(path)
 	local result = lfs.attributes(path)
 	if not result or result.mode ~= "file" then
 		return 0
@@ -29,7 +30,7 @@ function GetFileSize(path)
 	return result.size
 end
 
-function IsDir(path)
+function fs.IsDir(path)
 	local result = lfs.attributes(path)
 	if result and result.mode == "directory" then
 		return true
@@ -37,7 +38,7 @@ function IsDir(path)
 	return false
 end
 
-function Dirname(path)
+function fs.Dirname(path)
 	if path == "." or path == "/" then
 		return path 
 	end
@@ -48,11 +49,11 @@ function Dirname(path)
 	return "."
 end
 
-function Mkdir(path, mode)
+function fs.Mkdir(path, mode)
 	local subpathList = string.split(path, "/")
 	path = nil
 	for _, subpath in ipairs(subpathList) do
-		if subpath ~= "." and subpath ~= "") then
+		if subpath ~= "." and subpath ~= "" then
 			path = path and string.format("%s/%s", path, subpath) or subpath
 			if not IsDir(path) then
 				lfs.mkdir(path, mode)
@@ -61,13 +62,19 @@ function Mkdir(path, mode)
 	end
 end
 
-
-
-function ReadFile(path)
+function fs.ReadFile(path)
 	local f = io.open(path, "r")
 	assert(f, string.format("%s not exists", path))
 	local str = f:read("*a")
 	f:close()
 	return str
 end
+
+function fs.WriteFile(path, data)
+	local f = io.open(path, "w+")
+	f:write(data)
+	f:close()
+end
+
+return fs
 

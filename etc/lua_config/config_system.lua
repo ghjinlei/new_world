@@ -22,5 +22,12 @@ config.dbserver.db_name = tostring(config.server.host_id)
 config.auth = {}
 config.auth.auth_count = 1
 
+config.log = {}
+config.log.level = 1
+config.log.level_for_console = 1
+config.log.dir = "./log"
+config.log.cache_count = 1
+config.log.time_format = "%Y%m%d %H:%M:%S"
+
 return config
 

@@ -1,22 +1,32 @@
 local skynet = require "skynet"
 require "skynet.manager"
-local misc = require "misc"
+local fs = require "common.fs"
+local config_system = require "config_system"
 
-local LogDirPath = "./log"
-local MaxCacheCount = 1
+local LogDirPath = config_system.log.dir
+local MaxCacheCount = config_system.log.cache_count or 1
 local LogShiftTime = 3600 * 1
 
-local LogTimeFormat = "%Y%m%d %H:%M:%S"
-function genLogHeader(sec, usec, address)
+local LogTimeFormat = config_system.log.time_format or "%Y%m%d %H:%M:%S"
+local function genLogHeader(timeNowMilli, address)
+	local sec, decimals = math.modf(timeNowMilli)
 	local timeStr = os.date(LogTimeFormat, sec)
-	return string.format("[%s.%06d][:%08d]", timeStr, usec, address)
+	local tm10ms = math.floor(decimals * 100)
+	return string.format("[%s.%02d][:%08d]", timeStr, tm10ms, address)
 end
 
-function genLogFilePath(logTime)
-	return string.format("%s/%s.log", LogDirPath, os.date("%Y%m%d%H", logTime))
+local function getLogFileTime(timeNow)
+	local t = os.date("*t", timeNow)
+	t.min = 0
+	t.sec = 0
+	return os.time(t)
 end
 
-function __G_TRACE_BACK__(err)
+local function genLogFilePath(timeNow)
+	return string.format("%s/%s.log", LogDirPath, os.date("%Y%m%d%H", timeNow))
+end
+
+local function __G_TRACE_BACK__(err)
 	print("\27[31m" .. "USERLOG ERROR:" .. tostring(err) .. "\n" ..  debug.traceback() .. "\27[0m")
 end
 
@@ -25,7 +35,7 @@ local clsLogger = {}
 function clsLogger.New()
 	local o = {
 		_logFile = nil,		-- 日志文件
-		_logFileTime = nil,	-- 日志文件时间
+		_logFileTime = 0,	-- 日志文件时间
 		_logSize = 0,		-- 当前日志大小
 		_cacheCount = 0,	-- 当前缓存日志数
 	}
@@ -34,19 +44,20 @@ function clsLogger.New()
 end
 
 function clsLogger:Init()
-	self:AddLog("[info]-----------------LOGGER START-----------------",0)
+	self:AddLog("[info]-----------------LOGGER START-----------------", 0)
 end
 
 function clsLogger:openLogFile(timeNow)
 	self:closeLogFile()
 
 	local newLogFilePath = genLogFilePath(timeNow)
-	local dirPath = FS.Dirname(newLogFilePath)
-	if not FS.IsDir(dirPath) then
-		FS.Mkdir(dirPath)
+	local dirPath = fs.Dirname(newLogFilePath)
+	if not fs.IsDir(dirPath) then
+		fs.Mkdir(dirPath)
 	end
 
 	self._logFile = assert(io.open(newLogFilePath, "a+"))
+	self._logFileTime = timeNow
 	self._logSize = self._logFile:seek("end")
 end
 
@@ -59,15 +70,16 @@ function clsLogger:closeLogFile()
 end
 
 function clsLogger:AddLog(msg, address)
-	local sec, usec = misc.gettimeofday()
-	local logHeader = genLogHeader(sec, usec, address)
+	local timeNowMilli = skynet.time()
+	local logHeader = genLogHeader(timeNowMilli, address)
 	msg = logHeader .. msg
 
-	if sec - self._logFileTime >= LogShiftTime then
+	local timeNow = math.floor(timeNowMilli)
+	if timeNow - self._logFileTime >= LogShiftTime then
 		self:openLogFile(timeNow)
 	end
 
-	self._logFile:write(msg)
+	self._logFile:write(msg .. "\n")
 	self._logSize = self._logSize + #msg
 	self._cacheCount = self._cacheCount + 1
 
@@ -95,11 +107,19 @@ local function initLog()
 	loggerObj = clsLogger.New()
 	loggerObj:Init()
 end
-local function writeLog(msg, address)
+
+local function onMessage(msg, address)
 	if not loggerObj then
 		return
 	end
-	loggerObj:AddLog(msg, address)
+
+	local tag = string.match(msg, "^%[(.-%)]")
+	if tag == "!shutdown" then
+		loggerObj:Close(msg, address)
+		loggerObj = nil
+	else
+		loggerObj:AddLog(msg, address)
+	end
 end
 
 skynet.register_protocol {
@@ -108,24 +128,17 @@ skynet.register_protocol {
 	unpack = skynet.tostring,
 	dispatch = function(_, address, msg)
 		xpcall(function()
-			writeLog(msg, address)
+			onMessage(msg, address)
 		end, __G_TRACE_BACK__)
 	end
 }
 
-skynet.register_protocol {
-	name = "SYSTEM",
-	id = skynet.PTYPE_SYSTEM,
-	unpack = function(...) return ... end,
-	dispatch = function()
-		-- reopen signal
-		print("SIGHUP")
-	end
-}
-
 skynet.start(function()
-	print("userlog init ......")
-	initLog()
+	print("init service start :userlog ......")
+	xpcall(function()
+		initLog()
+	end, __G_TRACE_BACK__)
+
 	skynet.register ".logger"
-	print("userlog ready")
+	print("init service finish :userlog")
 end)

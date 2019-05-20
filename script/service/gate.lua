@@ -33,17 +33,20 @@ skynet.register_protocol {
 function handler.open()
 end
 
-function handler.connect(fd, addr)
-	local c = {
-		fd = fd,
-		ip = addr,
-	}
-	connection[fd] = c
-end
-
-function handler.message(fd, msg, sz)
+function handler.data(fd, msg, sz)
 	local c = connection[fd]
 	local agent = c.agent
+	if agent then	-- 存在agent发往agent
+		skynet.send(agent, "lua", "socket", "message", fd, msg, sz)
+	end
+end
+
+function handler.more()
+
+end
+
+function handler.close()
+
 end
 
 function handler.error(fd, msg)
@@ -57,7 +60,7 @@ function CMD.open()
 	local ip, port = table.unpack(string.split(config_gated.listen_addr, ":"))
 	port = tonumber(port)
 
-	socket = socketdriver.listen(address, port)
+	socket = socketdriver.listen(ip, port)
 	socketdriver.start(socket)
 end
 

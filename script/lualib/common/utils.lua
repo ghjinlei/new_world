@@ -11,7 +11,7 @@ local logger = require "common.logger"
 local utils = {}
 
 function utils.traceback(err)
-	print(err)
+	logger.error(err)
 end
 
 function utils.pcallRet(session, ok, ...)
@@ -28,7 +28,7 @@ function utils.DispatchLua(CMD)
 	skynet.dispatch("lua", function(session, source, cmd, ...)
 		local f = CMD[cmd]
 		if f then
-			utils.pcallRet(session, xpcall(f(...), utils.traceback))
+			utils.pcallRet(session, xpcall(f, utils.traceback, ...))
 			return
 		end
 
