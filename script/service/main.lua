@@ -1,3 +1,4 @@
+
 local skynet = require "skynet"
 require "skynet.manager"	-- import skynet.register
 local config_system = require "config_system"
@@ -5,6 +6,7 @@ local lunix = require "lunix"
 local fs = require "common.fs"
 local utils = require "common.utils"
 local logger = require "common.logger"
+dofile("script/lualib/common/base/preload.lua")
 
 local debug_console
 local gate
@@ -14,6 +16,9 @@ local database
 local authList = {}
 
 function writeVariables()
+	if not fs.IsDir("var") then
+		fs.Mkdir("var")
+	end
 	fs.WriteFile("var/pid", lunix.getpid())
 	local runningList = {}
 	table.insert(runningList, "host_id " .. config_system.server.host_id)

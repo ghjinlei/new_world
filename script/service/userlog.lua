@@ -1,7 +1,9 @@
+
 local skynet = require "skynet"
 require "skynet.manager"
 local fs = require "common.fs"
 local config_system = require "config_system"
+dofile("script/lualib/common/base/preload.lua")
 
 local LogDirPath = config_system.log.dir
 local MaxCacheCount = config_system.log.cache_count or 1
@@ -113,7 +115,9 @@ local function onMessage(msg, address)
 		return
 	end
 
-	local tag = string.match(msg, "^%[(.-%)]")
+	local tag = string.match(msg, "^%[(.-)%]")
+	print("onMessage.msg:", msg)
+	print("onMessage.tag:", tag)
 	if tag == "!shutdown" then
 		loggerObj:Close(msg, address)
 		loggerObj = nil

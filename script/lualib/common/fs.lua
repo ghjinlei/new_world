@@ -55,7 +55,7 @@ function fs.Mkdir(path, mode)
 	for _, subpath in ipairs(subpathList) do
 		if subpath ~= "." and subpath ~= "" then
 			path = path and string.format("%s/%s", path, subpath) or subpath
-			if not IsDir(path) then
+			if not fs.IsDir(path) then
 				lfs.mkdir(path, mode)
 			end
 		end
