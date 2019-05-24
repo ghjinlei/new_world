@@ -24,6 +24,7 @@ end
 local function loadGlobalFileList()
 	local globalFileList = {
 		"lualib/common/base/extend.lua",
+		"lualib/common/base/import.lua",
 	}
 
 	for _, filePath in ipairs(globalFileList) do

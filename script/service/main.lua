@@ -32,7 +32,7 @@ local function main()
 
 	debug_console = skynet.uniqueservice("debug_console", config_system.server.debug_console_port)
 
---	gate = skynet.newservice("gate", skynet.self())
+	gate = skynet.newservice("gate", skynet.self())
 --	agentmgr = skynet.newservice("agentmgr", skynet.self(), gate)
 --	scenemgr = skynet.newservice("scenemgr", skynet.self())
 --	database = skynet.newservice("database", skynet.self())
@@ -45,11 +45,12 @@ local function main()
 --
 --	skynet.call(agnetmgr, "lua", "init")
 --	skynet.call(scenemgr, "lua", "init")
---	skynet.call(gate, "lua", "open")
+	skynet.call(gate, "lua", "open")
 end
 
 local function shutdown()
-	-- TODO
+	skynet.call(gate, "lua", "close")
+
 	logger.shutdown()
 
 	skynet.timeout(100, function()

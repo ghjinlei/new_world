@@ -11,10 +11,10 @@ local config = {}
 config.server = {}
 config.server.host_id = 101
 config.server.host_name = "new world"
-config.server.debug_console_port = 51019
+config.server.debug_console_port = 9001
 
 config.gate = {}
-config.gate.listen_addr = "0.0.0.0:51010"
+config.gate.listen_addr = "0.0.0.0:6001"
 
 config.dbserver = {}
 config.dbserver.db_name = tostring(config.server.host_id)

@@ -116,8 +116,6 @@ local function onMessage(msg, address)
 	end
 
 	local tag = string.match(msg, "^%[(.-)%]")
-	print("onMessage.msg:", msg)
-	print("onMessage.tag:", tag)
 	if tag == "!shutdown" then
 		loggerObj:Close(msg, address)
 		loggerObj = nil
