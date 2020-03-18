@@ -40,4 +40,21 @@ function utils.DispatchLua(CMD)
 	end)
 end
 
+function utils.DispatchLuaByModule(module)
+	assert(module and type(module.GetLuaCmdHandler) == "function")
+	local dispatchFunc = function(session, source, cmd, ...)
+		local func = module.GetLuaCmdHandler(cmd)
+		if func then
+			utils.pcallRet(session, xpcall(func, utils.traceback, ...))
+			return
+		end
+		logger.warningf("DispatchLuaModule_cmd_drop,session=%d,source=%08x,cmd=%s", session, source, cmd)
+		if session ~= 0 then
+			skynet.ret()
+		end
+
+	end
+	skynet.dispatch(dispatchFunc)
+end
+
 return utils

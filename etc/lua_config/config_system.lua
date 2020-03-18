@@ -9,8 +9,8 @@ Description :
 local config = {}
 
 config.server = {}
-config.server.host_id = 101
-config.server.host_name = "new world"
+config.server.host_id = 1001
+config.server.host_name = "1001"
 config.server.debug_console_port = 9001
 
 config.gate = {}
@@ -21,6 +21,8 @@ config.dbserver.db_name = tostring(config.server.host_id)
 
 config.auth = {}
 config.auth.auth_count = 1
+
+config.agentmgr.
 
 config.log = {}
 config.log.level = 1

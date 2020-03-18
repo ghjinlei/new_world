@@ -83,6 +83,14 @@ function logger.infof(...)
 	write(loglevel_info, string.format(...))
 end
 
+function logger.warning(msg)
+	write(loglevel_warn, msg)
+end
+
+function logger.warningf(...)
+	write(loglevel_warn, string.format(...))
+end
+
 function logger.error(msg)
 	write(loglevel_error, msg)
 end
