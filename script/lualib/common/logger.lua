@@ -65,6 +65,7 @@ local function write(level, msg)
 		sendLogger(level, msg)
 	end
 end
+--]]
 
 local logger = {}
 function logger.debug(msg)

@@ -8,11 +8,11 @@ Description :
 local skynet = require "skynet"
 local logger = require "common.logger"
 local config_system = require "config_system"
-local config_agentmgr = config_system.agentmgr or {}
+local config_agentmgr = config_system.agentmgr
 
-local maxAgentCount = config_agentmgr.max_agent_count or 100
-local agentPerDatabase = config_agentmgr.agent_per_database or 10
-local maxEnterPerBatch = config_agentmgr.max_enter_per_batch or 10
+local maxAgentCount = config_agentmgr.max_agent_count
+local agentPerDatabase = config_agentmgr.agent_per_database
+local maxEnterPerBatch = config_agentmgr.max_enter_per_batch
 
 local gate = ...
 
@@ -76,7 +76,6 @@ function clsQueue:Remove(value)
 end
 
 local clientQueue = clsQueue.New()
-
 local clientMap = { }		-- key --> client
 local clientFd2KeyMap = {}	-- fd -- > key
 
@@ -151,9 +150,7 @@ local function onUpdate()
 		client:EnterGame()
 	end
 
-	for idx, client in clientQueue:
-
-
+	-- TODO:提示排队玩家具体名次
 
 	skynet.timeout(100, onUpdate)
 end
@@ -181,6 +178,7 @@ function SOCKET.error(fd, msg)
 	logger.debugf("agentmgr.SOCKET.error,fd=%d,msg=%s", fd, msg)
 	handleDisconnect(fd, "socket.error")
 end
+--]]
 
 local CMD = {}
 function CMD.socket(cmd, ...)
@@ -238,4 +236,4 @@ skynet.start(function()
 	end)
 
 	skynet.register(".agentmgr")
-end
+end)

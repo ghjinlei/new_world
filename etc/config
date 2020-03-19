@@ -1,4 +1,14 @@
-include "config.path"
+-- config path
+root = "./"
+skynet_root = "./skynet/"
+script_root = "./script/"
+etc_root = "./etc/"
+luaservice = script_root.."service/?.lua;"..skynet_root.."service/?.lua"
+lualoader = skynet_root .. "lualib/loader.lua"
+lua_path = etc_root.."?.lua;"..script_root.."lualib/?.lua;"..script_root.."common/?.lua;"..skynet_root.."lualib/?.lua;"..skynet_root.."lualib/?/init.lua"
+lua_cpath = skynet_root .. "luaclib/?.so"
+snax = skynet_root.."server/?.lua"
+cpath = skynet_root.."cservice/?.so"
 
 -- preload = "./examples/preload.lua"	-- run preload.lua before every lua service run
 thread = 8

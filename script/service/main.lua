@@ -14,5 +14,5 @@ skynet.start(function()
 	end)
 
 	utils.DispatchLuaByModule(MAIN)
-	skynet.register "MAIN"
+	skynet.register ".main"
 end)

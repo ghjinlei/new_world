@@ -5,13 +5,17 @@ local config_gate = require("config_system").gate
 local utils = require "common.utils"
 local logger = require "common.logger"
 
+local socket          -- listen socket
+local queue           -- message queue
 local maxclient = config_gate.maxclient or 1024
 local client_number = 0
+local CMD = setmetatable({}, { __gc = function() netpack.clear(queue) end })
 local nodelay = false
-local queue           -- message queue
+
+local connection = {}
 local authList = false
 local authIdx = 0
-local connection = {}
+
 --[[
 	[fd] = {
 		agent = xxx,
@@ -101,30 +105,65 @@ function MSG.open(fd, address)
 	connection[fd] = { conn = auth, address = address }
 	client_number = client_number + 1
 	socketdriver.start(fd)
-	skynet.send(auth, "lua", "socket", "connect", fd, address)
+	skynet.send(auth, "lua", "socket", "open", fd, address)
 end
 
-local CMD = setmetatable({}, { __gc = function() netpack.clear(queue) end })
+local function close_fd(fd)
+	local c = connection[fd]
+	if c then
+		connection[fd] = nil
+	end
+end
+
+function MSG.close(fd)
+	if fd ~= socket then
+		local c = connection[fd]
+		if c then
+			skynet.send(c.conn, "lua", "socket", "close", fd)
+		end
+		close_fd(fd)
+	else
+		socket = nil
+	end
+end
+
+function MSG.error(fd, msg)
+	if fd ~= socket then
+		socketdriver.close(fd)
+		logger.errorf("gateserver close listen socket, accpet error:%s", tostring(msg))
+	else
+		skynet.send(c.conn, "lua", "socket", "error", fd, msg)
+		close_fd(fd)
+	end
+end
+
+function MSG.warning(fd, sz)
+	local c= connection[fd]
+	if c then
+		skynet.send(c.conn, "lua", "socket", "warning", fd, sz)
+	end
+end
+
 -- 启动坚挺，开始服务
 function CMD.open(source)
-	assert(not listen_sock)
+	assert(not socket)
 	local ip,port = table.unpack( string.split(config_gated.listen_addr, ":") )
 	port = tonumber(port)
 	 
-	listen_sock = socketdriver.listen(ip,port)
-	logger.infof("******************Listen on %s:%d sock(%d)******************", ip,port, listen_sock)
-	socketdriver.start(listen_sock)
+	socket = socketdriver.listen(ip,port)
+	logger.infof("******************socket open %d %s:%d******************", socket, ip,port)
+	socketdriver.start(socket)
 	return true
 end
 
 -- 关闭监听
 function CMD.close()
-	logger.infof("*****************Close sock(%d)*****************",listen_sock or 0)
-	if not listen_sock then 
+	logger.infof("******************socket close %d***********************", socket or 0)
+	if not socket then 
 		return 
 	end
-	socketdriver.close(listen_sock)
-	listen_sock = nil
+	socketdriver.close(socket)
+	socket = nil
 end
 
 function CMD.forward(source, fd, client, address)
@@ -143,7 +182,7 @@ end
 
 -- 关闭客户端连接
 function CMD.kick(source, fd)
-	assert(fd and fd ~= listen_sock)
+	assert(fd and fd ~= socket)
 	logger.infof("gate_kick,source=%s,fd=%s", tostring(source), tostring(fd))
 
 	connection[fd].conn = nil
@@ -155,6 +194,6 @@ function CMD.SetAuthList(auths)
 end
 
 skynet.start(function()
-	logger.init()
 	utils.DispatchLua(CMD)
 end)
+

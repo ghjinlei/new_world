@@ -22,15 +22,16 @@ authList = {}
 function Main()
 	debug_console = skynet.uniqueservice("debug_console", config_server.debug_console_port)
 
-	protoloader = skynet.newservice("protoloader")
+	protoloader = skynet.uniqueservice("protoloader")
 
-	gate = skynet.newservice("gate", skynet.self())
+	gate = skynet.uniqueservice("gate", skynet.self())
 
-	agentmgr = skynet.uniqueservice("agentmgr", skynet.self(), gated)
+	agentmgr = skynet.uniqueservice("agentmgr", skynet.self(), gate)
 
+	--[[
 	-- 启动多个auth
 	for i = 1, config_auth.auth_count do
-		local auth = skynet.newservice("auth", gated, agentmgr)
+		local auth = skynet.newservice("auth", gate, agentmgr)
 		table.insert(authList, auth)
 	end
 
@@ -38,5 +39,6 @@ function Main()
 
 	-- gate需要最后开放
 	skynet.call(gate, "lua", "Open")
+	--]]
 end
 
