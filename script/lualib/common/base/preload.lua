@@ -7,6 +7,8 @@ Description :
 --]]
 local utils = require "common.utils"
 
+__G_TRACE_BACK__ = utils.traceback
+
 local __LUA_SERACH_PATH__ = "./script"
 function GLoadFile(relaPath, env)
 	return loadfile(__LUA_SERACH_PATH__ .. "/" .. relaPath, "bt", env)

@@ -10,6 +10,15 @@ local utils = require "common.utils"
 dofile("script/lualib/common/base/preload.lua")
 
 GSOCK = GImport("lualib/robot/gsock.lua")
+AUTH = GImport("lualib/robot/auth.lua")
+
+local openId = ...
+
+local TICK_INTERVAL = 200 -- 200毫秒一次tick
+local function tick()
+
+	skynet.timeout(TICK_INTERVAL / 10, tick)
+end
 
 local CMD = {}
 function CMD.Connect()
@@ -17,6 +26,10 @@ function CMD.Connect()
 	local paramList = string.split(serverAddr, ":")
 	local host, port = paramList[1], tonumber(paramList[2])
 	GSOCK.Connect(host, port)
+end
+
+function CMD.Login()
+	AUTH.Login()
 end
 
 function CMD.Send(msg)
@@ -28,6 +41,11 @@ function CMD.Disconnect()
 end
 
 skynet.start(function()
+	local sproto_helper = require "common.sproto_helper"
+	sproto_helper.Init()
 	utils.DispatchLuaByCmd(CMD)
+
+	AUTH.SetOpenId(openId)
+	skynet.timeout(1, tick)
 end)
 

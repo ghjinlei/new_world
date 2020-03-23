@@ -57,7 +57,7 @@ function CMD.login(args, cmdline)
 	for _, robot in ipairs(selectRobotList) do
 		local openId = robot.OpenId
 		local addr = robot.Addr
-		skynet.send(addr, "lua", "Login", openId)
+		skynet.send(addr, "lua", "Login")
 	end
 end
 
@@ -111,8 +111,10 @@ function mainLoop()
 end
 
 skynet.start(function()
-	print("robot/main.lua start ...")
+	skynet.error("init service start :main ......")
+	skynet.uniqueservice("protoloader")
+
 	skynet.fork(mainLoop)
-	print("robot/main.lua finish")
+	skynet.error("init service finish :main")
 end)
 

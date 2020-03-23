@@ -9,30 +9,31 @@ local sprotoloader = require "sprotoloader"
 local sprotoHost
 local sprotoRequest
 
-local sprotoHelper = {}
-function sprotoHelper.Init()
+local helper = {}
+
+function helper.Init()
 	sprotoHost = sprotoloader.load(1):host "package"
 	sprotoRequest = sprotoHost:attach(sprotoloader.load(2))
 end
 
 local msgHandlers = {}
-function sprotoHelper.RegMsgHandler(protoName, handler)
+function helper.RegMsgHandler(protoName, handler)
 	assert(type(protoName) == "string")
 	msgHandlers[protoName] = handler
 end
 
-function sprotoHelper.RegMsgHandlers(handlers)
+function helper.RegMsgHandlers(handlers)
 	for protoName, handler in pairs(handlers) do
-		sprotoHelper.RegMsgHandler(protoName, handler)
+		helper.RegMsgHandler(protoName, handler)
 	end
 end
 
-function sprotoHelper.Dispatch(msg, sz)
+function helper.Dispatch(msg, sz)
 	return pcall(sprotoHost.dispatch, sprotoHost, msg, sz)
 end
 
 local emptyTable = {}
-function sprotoHelper.HandleRequest(name, args, response, ...)
+function helper.HandleRequest(name, args, response, ...)
 	local handler = msgHandlers[name]
 	if not handler then
 		return false, "sproto does not include" .. name
@@ -41,19 +42,19 @@ function sprotoHelper.HandleRequest(name, args, response, ...)
 	return ok, response and response(ret or emptyTable)
 end
 
-function sprotoHelper.DispatchAndHandleRequest(msg, sz, ...)
-	local ok, type, name, args, response = sprotoHelper.Dispatch(msg, sz)
+function helper.DispatchAndHandleRequest(msg, sz, ...)
+	local ok, type, name, args, response = helper.Dispatch(msg, sz)
 	if not ok then
 		return false, "execute error"
 	end
 	if type ~= "REQUEST" then
 		return false, "bad proto direction"
 	end
-	return sprotoHelper.HandleRequest(name, args, response, ...)
+	return helper.HandleRequest(name, args, response, ...)
 end
 
-function sprotoHelper.PackMsg(protoName, args, sessionId)
-	return sprotoRequest(protoName, args, sessionId)
+function helper.PackMsg(protoName, args, session)
+	return sprotoRequest(protoName, args, session)
 end
 
-return sprotoHelper
+return helper
