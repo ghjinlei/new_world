@@ -6,9 +6,10 @@ CreateTime : 2020-03-21 00:10:00
 Description :
 --]]
 local skynet = require "skynet"
+local skynet_queue = require "skynet.queue"
 local logger = require "common.logger"
 local config = require "config_system"
-local sprotoHelper = require "sproto_helper"
+local sproto_helper = require "common.sproto_helper"
 
 local clientMap = { }
 
@@ -27,7 +28,7 @@ function clsClient.New(fd, address)
 		address = address,
 		salt = genSalt(),
 		userInfo = nil,
-		mq = skynet.queue(),
+		mq = skynet_queue(),
 	}
 	setmetatable(o, {__index = clsClient})
 	return o
@@ -70,7 +71,7 @@ function clsClient:HandleClientMsg(msg)
 			return
 		end
 
-		local ok, result = sprotoHelper.DispatchAndHandleRequest(self, msg)
+		local ok, result = sproto_helper.DispatchAndHandleRequest(self, msg)
 		if not ok then
 			self:Release()
 			return
@@ -131,6 +132,6 @@ function GetCmdHandler(cmd)
 end
 
 function SystemStartup(module)
-	sprotoHelper.RegMsgHandler("AUTH_HandShake", clsClient.HandShake)
-	sprotoHelper.RegMsgHandler("AUTH_Auth", clsClient.Auth)
+	sproto_helper.RegMsgHandler("AUTH_HandShake", clsClient.HandShake)
+	sproto_helper.RegMsgHandler("AUTH_Auth", clsClient.Auth)
 end

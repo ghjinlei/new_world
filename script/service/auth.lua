@@ -8,15 +8,17 @@ Description :
 
 local skynet = require "skynet"
 local utils = require "common.utils"
-local sprotoHelper = require "common.sproto_helper"
-dofile("common/base/preload.lua")
+local sproto_helper = require "common.sproto_helper"
+dofile("script/lualib/common/base/preload.lua")
 
 MAIN = GImport("lualib/auth/main.lua")
 
 skynet.start(function()
-	sprotoHelper.Init()
+	print("init service start :auth ......")
+	sproto_helper.Init()
 	MAIN:SystemStartup()
 	utils.DispatchLuaByModule(MAIN)
+	print("init service finish :auth")
 end)
 
 

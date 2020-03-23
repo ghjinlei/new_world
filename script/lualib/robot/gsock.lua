@@ -19,7 +19,8 @@ end
 
 function Send(msg)
 	skynet.error("send_1:" .. msg)
-	socket.write(conn, msg)
+	data = string.pack(">s2", msg)
+	socket.write(conn, data)
 	skynet.error("send_2:" .. msg)
 end
 

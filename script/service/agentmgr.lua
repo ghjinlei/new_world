@@ -194,7 +194,7 @@ function CMD.NewClient(fd, clientData)
 		client = clsClient.New(clientData)
 		client:Init(clientData.fd)
 	end
-	skynet.send(".watchdog", "lua", "Forward", fd, skynet.self())
+	skynet.send(gate, "lua", "forward", fd, skynet.self())
 end
 
 function CMD.OnAgentDisconnect(key, agent, fd)
@@ -224,6 +224,7 @@ function CMD.start()
 end
 
 skynet.start(function()
+	print("init service start :agentmgr ......")
 	skynet.dispatch("lua", function(session, source, cmd, subcmd, ...)
 		if cmd == "socket" then
 			local f = SOCKET[subcmd]
@@ -235,5 +236,5 @@ skynet.start(function()
 		end
 	end)
 
-	skynet.register(".agentmgr")
+	print("init service finish :agentmgr")
 end)

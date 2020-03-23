@@ -7,35 +7,37 @@ Description :
 --]]
 local skynet = require "skynet"
 local socket = require "skynet.socket"
-dofile("common/base/preload.lua")
+dofile("script/lualib/common/base/preload.lua")
 
-local robotIdx = 0
-local robotList = {}
-local function addRobot(num)
-	for i = 1, num do
-		robotIdx = robotIdx + 1
+local robotMap = {}
+local function addRobot(robotIdx1, robotIdx2)
+	robotIdx2 = robotIdx2 or robotIdx1
+	for robotIdx = robotIdx1, robotIdx2 do
 		local openId = "robot_" .. tostring(robotIdx)
 		local robotAddr = skynet.newservice("robot", openId)
 		local robot = {OpenId = openId, Addr = robotAddr}
-		table.insert(robotList, robot)
+		robotMap[robotIdx] = robot
 	end
 end
 
 local selectRobotList = {}
-local function selectRobot(idx1, idx2)
+local function selectRobot(robotIdx1, robotIdx2)
 	selectRobotList = {}
-	idx1 = idx1 < 1 and 1 or idx1
-	idx2 = idx2 > #robotList and #robotList or idx2
-	for idx = idx1, idx2 do
-		local robot = robotList[idx]
-		table.insert(selectRobotList, robot)
+	robotIdx1 = robotIdx1 < 1 and 1 or robotIdx1
+	robotIdx2 = robotIdx2 or robotIdx1
+	for robotIdx = robotIdx1, robotIdx2 do
+		local robot = robotMap[robotIdx]
+		if robot then
+			table.insert(selectRobotList, robot)
+		end
 	end
 end
 
 local CMD = {}
 function CMD.add(args, cmdline)
-	local num = args[1] and tonumber(args[1]) or 1
-	addRobot(num)
+	local robotIdx1 = tonumber(args[1])
+	local robotIdx2 = tonumber(args[2])
+	addRobot(robotIdx1, robotIdx2)
 end
 
 function CMD.sel(args, cmdline)
@@ -81,14 +83,15 @@ end
 function CMD.help()
 	skynet.error([[
 usage(avaliable commands):
-        add        :eg      add              : add a robot
-                    eg      add 10           : add 10 robots
-        sel        :eg      sel              : select all robot
-                    eg      sel 1 100        : select robot nameidx in range [1, 100]"
-        c          :eg      c
+        add        :eg      add 10           : add a robot idx = 10
+                    eg      add 10, 100      : add robots idx from 10 to 100
+        sel        :eg      sel 10           : select a robot idx = 10
+                    eg      sel 10 100       : select robot idx in range [1, 100]"
+        connect    :eg      connect          : connect all select robots
         login      :eg      login            : login
         info       :eg      info             : info
-        send       :eg      send xxx        : send
+        send       :eg      send xxx         : send
+        disconnect :eg      disconnect       : disconnect all select robots
 ]])
 end
 

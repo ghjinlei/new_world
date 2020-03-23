@@ -24,11 +24,10 @@ function Main()
 
 	protoloader = skynet.uniqueservice("protoloader")
 
-	gate = skynet.uniqueservice("gate", skynet.self())
+	gate = skynet.newservice("gate")
 
-	agentmgr = skynet.uniqueservice("agentmgr", skynet.self(), gate)
+	agentmgr = skynet.uniqueservice("agentmgr", gate)
 
-	--[[
 	-- 启动多个auth
 	for i = 1, config_auth.auth_count do
 		local auth = skynet.newservice("auth", gate, agentmgr)
@@ -38,7 +37,6 @@ function Main()
 	skynet.call(gate, "lua", "SetAuthList", authList)
 
 	-- gate需要最后开放
-	skynet.call(gate, "lua", "Open")
-	--]]
+	skynet.call(gate, "lua", "open")
 end
 

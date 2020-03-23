@@ -2,7 +2,7 @@ local skynet = require "skynet"
 require "skynet.manager"	-- import skynet.register
 local utils = require "common.utils"
 local logger = require "common.logger"
-dofile("common/base/preload.lua")
+dofile("script/lualib/common/base/preload.lua")
 
 MAIN = GImport("lualib/main/main.lua")
 

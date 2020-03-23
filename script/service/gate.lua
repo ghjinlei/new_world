@@ -4,6 +4,7 @@ local socketdriver = require "skynet.socketdriver"
 local config_gate = require("config_system").gate
 local utils = require "common.utils"
 local logger = require "common.logger"
+dofile("script/lualib/common/base/preload.lua")
 
 local socket          -- listen socket
 local queue           -- message queue
@@ -28,21 +29,22 @@ skynet.register_protocol {
 	id = skynet.PTYPE_CLIENT,
 }
 
+local MSG = {}
+
 skynet.register_protocol {
-        name = "socket",
-        id = skynet.PTYPE_SOCKET,       -- PTYPE_SOCKET = 6
-        unpack = function ( msg, sz )
-                return netpack.filter( queue, msg, sz)
-        end,
-        dispatch = function (_, _, q, type, ...)
-                queue = q
-                if type then
-                        MSG[type](...)
-                end
-        end
+	name = "socket",
+	id = skynet.PTYPE_SOCKET,       -- PTYPE_SOCKET = 6
+	unpack = function ( msg, sz )
+		return netpack.filter( queue, msg, sz)
+	end,
+	dispatch = function (_, _, q, type, ...)
+		queue = q
+		if type then
+			MSG[type](...)
+		end
+	end
 }
 
-local MSG = {}
 local function dispatch_msg(fd, msg, sz)
 	-- recv a package, forward it
 	local c = connection[fd]
@@ -147,11 +149,11 @@ end
 -- 启动监听,开始服务
 function CMD.open(source)
 	assert(not socket)
-	local ip,port = table.unpack( string.split(config_gated.listen_addr, ":") )
+	local ip, port = table.unpack(string.split(config_gate.listen_addr, ":"))
 	port = tonumber(port)
-	 
-	socket = socketdriver.listen(ip,port)
-	logger.infof("******************socket open %d %s:%d******************", socket, ip,port)
+ 
+	socket = socketdriver.listen(ip, port)
+	logger.infof("******************socket open %d %s:%d******************", socket, ip, port)
 	socketdriver.start(socket)
 	return true
 end
@@ -194,6 +196,6 @@ function CMD.SetAuthList(auths)
 end
 
 skynet.start(function()
-	utils.DispatchLua(CMD)
+	utils.DispatchLuaByCmd(CMD)
 end)
 
