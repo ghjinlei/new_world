@@ -129,11 +129,11 @@ end
 
 function MSG.error(fd, msg)
 	if fd ~= socket then
-		socketdriver.close(fd)
-		logger.errorf("gateserver close listen socket, accpet error:%s", tostring(msg))
-	else
 		skynet.send(c.conn, "lua", "socket", "error", fd, msg)
 		close_fd(fd)
+	else
+		socketdriver.close(fd)
+		logger.errorf("gateserver close listen socket, accept error:%s", tostring(msg))
 	end
 end
 
@@ -144,7 +144,7 @@ function MSG.warning(fd, sz)
 	end
 end
 
--- 启动坚挺，开始服务
+-- 启动监听,开始服务
 function CMD.open(source)
 	assert(not socket)
 	local ip,port = table.unpack( string.split(config_gated.listen_addr, ":") )

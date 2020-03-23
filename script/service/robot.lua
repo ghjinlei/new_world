@@ -7,27 +7,27 @@ Description :
 --]]
 local skynet = require "skynet"
 local utils = require "common.utils"
-dofile("script/lualib/common/base/preload.lua")
+dofile("common/base/preload.lua")
 
-GSOCK = GImport("robot/module/gsock.lua")
+GSOCK = GImport("robot/gsock.lua")
 
-local robot = {}
-function robot.Connect()
+local CMD = {}
+function CMD.Connect()
 	local serverAddr = skynet.getenv("server_addr")
 	local paramlist = string.split(serverAddr, ":")
 	local host, port = paramlist[1], tonumber(paramlist[2])
 	GSOCK.Connect(host, port)
 end
 
-function robot.Send(msg)
+function CMD.Send(msg)
 	GSOCK.Send(msg)
 end
 
-function robot.Disconnect()
+function CMD.Disconnect()
 	GSOCK.Disconnect()
 end
 
 skynet.start(function()
-	utils.DispatchLua(robot)
+	utils.DispatchLuaByCmd(CMD)
 end)
 

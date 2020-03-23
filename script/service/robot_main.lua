@@ -7,7 +7,7 @@ Description :
 --]]
 local skynet = require "skynet"
 local socket = require "skynet.socket"
-dofile("script/lualib/common/base/preload.lua")
+dofile("common/base/preload.lua")
 
 local robotIdx = 0
 local robotList = {}
@@ -44,7 +44,7 @@ function CMD.sel(args, cmdline)
 	selectRobot(robotIdx1, robotIdx2)
 end
 
-function CMD.c(args, cmdline)
+function CMD.connect(args, cmdline)
 	for _, robot in ipairs(selectRobotList) do
 		local addr = robot.Addr
 		skynet.send(addr, "lua", "Connect")
@@ -71,7 +71,7 @@ function CMD.send(args, cmdline)
 	end
 end
 
-function CMD.d(args, cmdline)
+function CMD.disconnect(args, cmdline)
 	for _, robot in ipairs(selectRobotList) do
 		local addr = robot.Addr
 		skynet.send(addr, "lua", "Disconnect")
