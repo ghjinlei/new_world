@@ -1,126 +1,118 @@
-
 local skynet = require "skynet"
 require "skynet.manager"
 local fs = require "common.fs"
 local config_system = require "config_system"
 dofile("script/lualib/common/base/preload.lua")
 
-local LogDirPath = config_system.log.dir
-local MaxCacheCount = config_system.log.cache_count or 1
-local LogShiftTime = 3600 * 1
+local log_dirpath = config_system.log.dir
+local max_cache_count = config_system.log.cache_count or 1
+local log_shift_time = 3600 * 1
 
-local LogTimeFormat = config_system.log.time_format or "%Y%m%d %H:%M:%S"
-local function genLogHeader(timeNowMilli, address)
-	local sec, decimals = math.modf(timeNowMilli)
-	local timeStr = os.date(LogTimeFormat, sec)
+local log_time_format = config_system.log.time_format or "%Y%m%d %H:%M:%S"
+local function gen_log_header(time_now_10ms, address)
+	local sec, decimals = math.modf(time_now_10ms)
+	local time_str = os.date(log_time_format, sec)
 	local tm10ms = math.floor(decimals * 100)
-	return string.format("[%s.%02d][:%08d]", timeStr, tm10ms, address)
+	return string.format("[%s.%02d][:%08d]", time_str, tm10ms, address)
 end
 
-local function getLogFileTime(timeNow)
-	local t = os.date("*t", timeNow)
-	t.min = 0
-	t.sec = 0
-	return os.time(t)
-end
-
-local function genLogFilePath(timeNow)
-	return string.format("%s/%s.log", LogDirPath, os.date("%Y%m%d%H", timeNow))
+local function gen_log_filepath(time_now)
+	return string.format("%s/%s.log", log_dirpath, os.date("%Y%m%d%H", time_now))
 end
 
 local function __G_TRACE_BACK__(err)
 	print("\27[31m" .. "USERLOG ERROR:" .. tostring(err) .. "\n" ..  debug.traceback() .. "\27[0m")
 end
 
---{{ clsLogger begin
-local clsLogger = {}
-function clsLogger.New()
+--{{ clslogger begin
+local clslogger = {}
+function clslogger.new()
 	local o = {
-		_logFile = nil,		-- 日志文件
-		_logFileTime = 0,	-- 日志文件时间
-		_logSize = 0,		-- 当前日志大小
-		_cacheCount = 0,	-- 当前缓存日志数
+		_log_file = nil,        -- 日志文件
+		_log_file_time = 0,     -- 日志文件时间
+		_log_size = 0,          -- 当前日志大小
+		_cache_count = 0,       -- 当前缓存日志数
 	}
-	setmetatable(o, {__index = clsLogger})
+	setmetatable(o, {__index = clslogger})
 	return o
 end
 
-function clsLogger:Init()
-	self:AddLog("[info]-----------------LOGGER START-----------------", 0)
+function clslogger:init()
+	self:add_log("[info]-----------------LOGGER START-----------------", 0)
 end
 
-function clsLogger:openLogFile(timeNow)
-	self:closeLogFile()
+function clslogger:open_log_file(time_now)
+	self:close_log_file()
 
-	local newLogFilePath = genLogFilePath(timeNow)
-	local dirPath = fs.Dirname(newLogFilePath)
-	if not fs.IsDir(dirPath) then
-		fs.Mkdir(dirPath)
+	local new_log_filepath = gen_log_filepath(time_now)
+	local dirpath = fs.dirname(new_log_filepath)
+	if not fs.isdir(dirpath) then
+		fs.mkdir(dirpath)
 	end
 
-	self._logFile = assert(io.open(newLogFilePath, "a+"))
-	self._logFileTime = timeNow
-	self._logSize = self._logFile:seek("end")
+	self._log_file = assert(io.open(new_log_filepath, "a+"))
+	self._log_file_time = time_now
+	self._log_size = self._log_file:seek("end")
 end
 
-function clsLogger:closeLogFile()
-	if self._logFile then
-		self:Flush()
-		self._logFile:close()
-		self._logFile = nil
-	end
-end
-
-function clsLogger:AddLog(msg, address)
-	local timeNowMilli = skynet.time()
-	local logHeader = genLogHeader(timeNowMilli, address)
-	msg = logHeader .. msg
-
-	local timeNow = math.floor(timeNowMilli)
-	if timeNow - self._logFileTime >= LogShiftTime then
-		self:openLogFile(timeNow)
-	end
-
-	self._logFile:write(msg .. "\n")
-	self._logSize = self._logSize + #msg
-	self._cacheCount = self._cacheCount + 1
-
-	-- 超过MaxCacheCount行刷新
-	if self._cacheCount >= MaxCacheCount then
-		self:Flush()
+function clslogger:close_log_file()
+	if self._log_file then
+		self:flush()
+		self._log_file:close()
+		self._log_file = nil
 	end
 end
 
-function clsLogger:Flush()
-	if self._logFile and self._cacheCount > 0 then
-		self._logFile:flush()
-		self._cacheCount = 0
+function clslogger:add_log(msg, address)
+	local time_now_10ms = skynet.time()
+	local log_header = gen_log_header(time_now_10ms, address)
+	msg = log_header .. msg
+
+	local time_now = math.floor(time_now_10ms)
+	if time_now - self._log_file_time >= log_shift_time then
+		self:open_log_file(time_now)
+	end
+
+	self._log_file:write(msg .. "\n")
+	self._log_size = self._log_size + #msg
+	self._cache_count = self._cache_count + 1
+
+	-- 超过max_cache_count行刷新
+	if self._cache_count >= max_cache_count then
+		self:flush()
 	end
 end
 
-function clsLogger:Close()
-	self:AddLog("[info]-----------------LOGGER SHUTDOWN-----------------", 0)
-	self:closeLogFile()
-end
---}} clsLogger end
-
-local loggerObj
-local function initLog()
-	loggerObj = clsLogger.New()
-	loggerObj:Init()
+function clslogger:flush()
+	if self._log_file and self._cache_count > 0 then
+		self._log_file:flush()
+		self._cache_count = 0
+	end
 end
 
-local function onMessage(msg, address)
-	if not loggerObj then
+function clslogger:close()
+	self:add_log("[info]-----------------LOGGER SHUTDOWN-----------------", 0)
+	self:close_log_file()
+end
+--}} clslogger end
+
+local logger_obj
+local function init_log()
+	logger_obj = clslogger.new()
+	logger_obj:init()
+end
+
+local function on_message(msg, address)
+	if not logger_obj then
 		return
 	end
 
 	local tag = string.match(msg, "^%[(.-)%]")
 	if tag == "!shutdown" then
-		loggerObj:Close(msg, address)
-		loggerObj = nil
+		logger_obj:close(msg, address)
+		logger_obj = nil
 	else
-		loggerObj:AddLog(msg, address)
+		logger_obj:add_log(msg, address)
 	end
 end
 
@@ -130,7 +122,7 @@ skynet.register_protocol {
 	unpack = skynet.tostring,
 	dispatch = function(_, address, msg)
 		xpcall(function()
-			onMessage(msg, address)
+			on_message(msg, address)
 		end, __G_TRACE_BACK__)
 	end
 }
@@ -138,7 +130,7 @@ skynet.register_protocol {
 skynet.start(function()
 	print("init service start :userlog ......")
 	xpcall(function()
-		initLog()
+		init_log()
 	end, __G_TRACE_BACK__)
 
 	skynet.register ".logger"
