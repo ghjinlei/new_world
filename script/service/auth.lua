@@ -15,8 +15,9 @@ MAIN = GImport("lualib/auth/main.lua")
 
 skynet.start(function()
 	print("init service start :auth ......")
-	sproto_helper.Init()
+	sproto_helper.init()
 	MAIN:SystemStartup()
+
 	utils.DispatchLuaByModule(MAIN)
 	print("init service finish :auth")
 end)

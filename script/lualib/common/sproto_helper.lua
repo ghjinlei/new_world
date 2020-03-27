@@ -6,55 +6,55 @@ CreateTime : 2019-06-26 20:48:15
 Description :
 --]]
 local sprotoloader = require "sprotoloader"
-local sprotoHost
-local sprotoRequest
+local sproto_host
+local sproto_request
 
-local helper = {}
+local sproto_helper = {}
 
-function helper.Init()
-	sprotoHost = sprotoloader.load(1):host "package"
-	sprotoRequest = sprotoHost:attach(sprotoloader.load(2))
+function sproto_helper.init()
+	sproto_host = sprotoloader.load(1):host "package"
+	sproto_request = sproto_host:attach(sprotoloader.load(2))
 end
 
-local msgHandlers = {}
-function helper.RegMsgHandler(protoName, handler)
-	assert(type(protoName) == "string")
-	msgHandlers[protoName] = handler
+local msg_handlers = {}
+function sproto_helper.reg_msghandler(proto_name, handler)
+	assert(type(proto_name) == "string")
+	msg_handlers[proto_name] = handler
 end
 
-function helper.RegMsgHandlers(handlers)
-	for protoName, handler in pairs(handlers) do
-		helper.RegMsgHandler(protoName, handler)
+function sproto_helper.reg_msghandlers(handlers)
+	for proto_name, handler in pairs(handlers) do
+		sproto_helper.reg_msghandler(proto_name, handler)
 	end
 end
 
-function helper.Dispatch(msg, sz)
-	return pcall(sprotoHost.dispatch, sprotoHost, msg, sz)
+function sproto_helper.dispatch(msg, sz)
+	return pcall(sproto_host.dispatch, sproto_host, msg, sz)
 end
 
-local emptyTable = {}
-function helper.HandleRequest(name, args, response, ...)
-	local handler = msgHandlers[name]
+local empty_table = {}
+function sproto_helper.handle(userdata, name, args, response, ...)
+	local handler = msg_handlers[name]
 	if not handler then
 		return false, "sproto does not include" .. name
 	end
-	local ok, ret = xpcall(handler, __G_TRACE_BACK__, args, ...)
-	return ok, response and response(ret or emptyTable)
+	local ok, ret = xpcall(handler, __G_TRACE_BACK__, userdata, args, ...)
+	return ok, response and response(ret or empty_table)
 end
 
-function helper.DispatchAndHandleRequest(msg, sz, ...)
-	local ok, type, name, args, response = helper.Dispatch(msg, sz)
+function sproto_helper.dispatch_and_handle(userdata, msg, sz, ...)
+	local ok, type, name, args, response = sproto_helper.dispatch(msg, sz)
 	if not ok then
 		return false, "execute error"
 	end
 	if type ~= "REQUEST" then
 		return false, "bad proto direction"
 	end
-	return helper.HandleRequest(name, args, response, ...)
+	return sproto_helper.handle(userdata, name, args, response, ...)
 end
 
-function helper.PackMsg(protoName, args, session)
-	return sprotoRequest(protoName, args, session)
+function sproto_helper.pack_msg(proto_name, args, session)
+	return sproto_request(proto_name, args, session)
 end
 
-return helper
+return sproto_helper

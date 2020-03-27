@@ -7,9 +7,13 @@ Description :
 --]]
 local skynet = require "skynet"
 local skynet_queue = require "skynet.queue"
+local socket = require "skynet.socket"
+local lrc4 = require "lrc4"
 local logger = require "common.logger"
 local config = require "config_system"
 local sproto_helper = require "common.sproto_helper"
+
+local c_rc4 = lrc4.new("pZ109jj2R9DmszDy")
 
 local clientMap = { }
 
@@ -61,24 +65,37 @@ function clsClient:Release()
 end
 
 function clsClient:SendBinMsg(msg)
-	skynet.send(".gate", "lua", "SendMsg", self.fd, string.pack(">s2", msg))
+	if self.fd then
+		local packet, err = c_rc4:pack_with_len(msg)
+		if packet then
+			socket.write(self.fd, packet)
+		else
+			logger.errorf("send_bin_msg error:%s", tostring(err))
+		end
+	end
 end
 
 function clsClient:HandleClientMsg(msg)
 	self.mq(function()
 		if self.finish then --认证结束
 			self:Release()
+			logger.errorf("dumplicated client login packet")
 			return
 		end
 
-		local ok, result = sproto_helper.DispatchAndHandleRequest(self, msg)
+		local ok, result = sproto_helper.dispatch_and_handle(self, msg)
 		if not ok then
 			self:Release()
+			logger.errorf("handle_client_msg error:%s", tostring(result))
 			return
 		end
 
 		if result then
 			self:SendBinMsg(result)
+		end
+
+		if self.finish then
+			self:Release()
 		end
 	end)
 end
@@ -132,6 +149,6 @@ function GetCmdHandler(cmd)
 end
 
 function SystemStartup(module)
-	sproto_helper.RegMsgHandler("AUTH_HandShake", clsClient.HandShake)
-	sproto_helper.RegMsgHandler("AUTH_Auth", clsClient.Auth)
+	sproto_helper.reg_msghandler("AUTH_HandShake", clsClient.HandShake)
+	sproto_helper.reg_msghandler("AUTH_Auth", clsClient.Auth)
 end

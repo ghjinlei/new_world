@@ -34,9 +34,14 @@ function Main()
 		table.insert(authList, auth)
 	end
 
-	skynet.call(gate, "lua", "SetAuthList", authList)
+	skynet.call(gate, "lua", "set_auth_list", authList)
 
 	-- gate需要最后开放
 	skynet.call(gate, "lua", "open")
 end
 
+local CMD = {}
+
+function GetCmdHandler(cmd)
+	return CMD[cmd]
+end

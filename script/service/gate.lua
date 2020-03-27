@@ -14,8 +14,8 @@ local CMD = setmetatable({}, { __gc = function() netpack.clear(queue) end })
 local nodelay = false
 
 local connection = {}
-local authList = false
-local authIdx = 0
+local auth_list = false
+local auth_idx = 0
 
 --[[
 	[fd] = {
@@ -90,19 +90,19 @@ function MSG.open(fd, address)
 	end
 
 	--负载均衡,选择一个authd;
-	local authNum = #authList
+	local authNum = #auth_list
 	if authNum == 0 then
 		logger.errorf("msg.open has no authd")
 		socketdriver.close(fd)
 		return
 	end
 
-	authIdx = authIdx + 1
-	if authIdx > authNum then
-		authIdx = 1
+	auth_idx = auth_idx + 1
+	if auth_idx > authNum then
+		auth_idx = 1
 	end
 
-	local auth = authList[authIdx]
+	local auth = auth_list[auth_idx]
 
 	connection[fd] = { conn = auth, address = address }
 	client_number = client_number + 1
@@ -191,8 +191,8 @@ function CMD.kick(source, fd)
 	socketdriver.close(fd)
 end
 
-function CMD.SetAuthList(auths)
-	authList = auths
+function CMD.set_auth_list(auths)
+	auth_list = auths
 end
 
 skynet.start(function()

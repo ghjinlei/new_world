@@ -7,7 +7,10 @@ Description :
 --]]
 local skynet = require "skynet"
 local socket = require "skynet.socket"
+local lrc4 = require "lrc4"
 local sproto_helper = require "common.sproto_helper"
+
+local c_rc4 = lrc4.new("pZ109jj2R9DmszDy")
 
 local conn
 function Connect(host, port)
@@ -44,9 +47,9 @@ function SendMsg(protoName, args, callback)
 		sessionId = genSessionId()
 		_sessionCbMap[sessionId] = callback
 	end
-	local packedMsg = sproto_helper.PackMsg(protoName, args, sessionId)
-	package = string.pack(">s2", packedMsg)
-	socket.write(conn, package)
+	local packedMsg = sproto_helper.pack_msg(protoName, args, sessionId)
+	local packet = c_rc4:pack_with_len(packedMsg)
+	socket.write(conn, packet)
 end
 
 local function responseCb(sessionId, args)
@@ -73,11 +76,17 @@ function Tick()
 	end
 
 	while handled + PROTO_LEN_SZ < totalLen do
-		local msg = convStr2Num()
-		handled = handled + PROTO_LEN_SZ + #msg
-		if msg ~= "" then
-			sproto_helper.
+		local msg, err, newHanled = c_rc4:unpack_with_len(_recvBuffer, nil, handled)
+		if not msg then
+			break
 		end
+		handled = newHanled
 	end
+
+	if handled == 0 then
+		return
+	end
+
+	_recvBuffer = string.sub(_recvBuffer, handled + 1)
 end
 
