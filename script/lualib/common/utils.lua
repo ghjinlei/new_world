@@ -11,7 +11,8 @@ local logger = require "common.logger"
 local utils = {}
 
 function utils.traceback(err)
-	logger.error(err)
+	local errMsg = err .. "\n" .. debug.traceback()
+	logger.error(errMsg)
 end
 
 function utils.pcallRet(session, ok, ...)

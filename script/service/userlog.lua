@@ -13,7 +13,7 @@ local function gen_log_header(time_now_10ms, address)
 	local sec, decimals = math.modf(time_now_10ms)
 	local time_str = os.date(log_time_format, sec)
 	local tm10ms = math.floor(decimals * 100)
-	return string.format("[%s.%02d][:%08d]", time_str, tm10ms, address)
+	return string.format("[%s.%02d][:%08x]", time_str, tm10ms, address)
 end
 
 local function gen_log_filepath(time_now)

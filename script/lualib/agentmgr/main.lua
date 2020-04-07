@@ -9,12 +9,13 @@ local skynet = require "skynet"
 local logger = require "common.logger"
 local config_system = require "config_system"
 local config_agentmgr = config_system.agentmgr
+local socket = require "skynet.socket"
 
 local maxAgentCount = config_agentmgr.max_agent_count
 local agentPerDatabase = config_agentmgr.agent_per_database
 local maxEnterPerBatch = config_agentmgr.max_enter_per_batch
 
-local gate = ...
+gate = ...
 
 local totalAgentCount = 0
 local freeAgentPool = {}
@@ -50,7 +51,7 @@ function clsQueue.New()
 	local q = {
 		_queue = {}
 	}
-	setmetatable(q, clsQueue)
+	setmetatable(q, clsQueue.__class_mt)
 	return q
 end
 
@@ -76,41 +77,43 @@ function clsQueue:Remove(value)
 end
 
 local clientQueue = clsQueue.New()
-local clientMap = { }		-- key --> client
-local clientFd2KeyMap = {}	-- fd -- > key
+local clientMap = {}           -- accountId --> client
+local fd2ClientId = {}         -- fd -- > accountId
 
 function getClientByFd(fd)
-	local key = clientFd2KeyMap[fd]
-	return key and clientMap[key]
+	local accountId = fd2ClientId[fd]
+	return accountId and clientMap[accountId]
 end
 
 -- 客户端
 local clsClient = {clientCount = 0 }
 clsClient.__class_mt = {__index = clsClient}
 function clsClient.New(clientData)
-	local key = clientData.key
-	local userInfo = clientData.userInfo
 	local o = {
-		key = key,
+		accountId = clientData.accountId,
 		salt = clientData.salt,
-		userInfo = userInfo,
+		userInfo = clientData.userInfo,
+		fd = clientData.fd,
 		userId = nil,
-		fd = nil,
 	}
 	setmetatable(o, clsClient.__class_mt)
 	return o
 end
 
-function clsClient:Init(fd)
-	assert(not clientFd2KeyMap[fd])
-	local key = self.key
-	assert(not clientMap[key])
+function clsClient:Init()
+	local accountId = self.accountId
+	assert(not clientMap[accountId])
 
-	clientMap[key] = self
-	clientQueue:Push(key)	-- 开始排队
+	clientMap[accountId] = self
+	clientQueue:Push(accountId)	-- 开始排队
 
-	self.fd = fd
 	clsClient.clientCount = clsClient.clientCount + 1
+end
+
+function clsClient:Update(clientData)
+	self.fd = clientData.fd
+	self.salt = clientData.salt
+	self.userInfo = clientData.userInfo
 end
 
 function clsClient:EnterGame()
@@ -127,13 +130,44 @@ function clsClient:ReenterGame(fd)
 end
 
 function clsClient:SendBinMsg(msg)
-	skynet.send(".gate", "lua", "SendMsg", self.fd, string.pack(">s2", msg))
+	local packet, err = lrc4.xor_pack(msg, 100)
+	if packet then
+		socket.write(self.fd, packet)
+	else
+		logger.errorf("send_bin_msg error:%s", tostring(err))
+	end
 end
 
 function clsClient:SendMsg(protoName, args)
-	self:SendBinMsg(sproto_helper.PackMsg(protoName, args))
+	self:SendBinMsg(sproto_helper.pack_msg(protoName, args))
 end
 
+function clsClient:closeFd(reason)
+	skynet.send(gate, "lua", "close_fd", skynet.self(), self.fd, reason)
+end
+
+function clsClient:Kick(reason)
+	logger.infof("agentmgr_kick,agent=%s,reason=%s", tostring(self.agent), tostring(reason))
+	if self.agent then
+		skynet.send(self.agent, "lua", "Kick", reason)
+		return
+	end
+
+	-- 同账号正在排队
+	self:closeFd(reason)
+	self:Release()
+end
+
+function clsClient:Release()
+	fd2ClientId[self.fd] = nil
+	clientMap[self.accountId] = nil
+
+	clientQueue:Remove(self.accountId)
+	if self.agent then
+		freeAgent(self.agent)
+	end
+	clsClient.clientCount = clsClient.clientCount + 1
+end
 
 local function onUpdate()
 	if shutingdown then
@@ -149,6 +183,33 @@ local function onUpdate()
 	-- TODO:提示排队玩家具体名次
 
 	skynet.timeout(100, onUpdate)
+end
+
+local SOCKET = {}
+function SOCKET.data(fd, msg)
+	logger.debugf("SOCKET.data:fd=%d,msg=%s", fd, msg)
+	skynet.send(gate, "lua", "close_fd", skynet.self(), self.fd, "agentmgr cant't receive data'")
+end
+
+local function handleSocketClose(fd)
+	local client = getClientByFd(fd)
+	if client then
+		client:Release()
+	end
+end
+
+function SOCKET.close(fd)
+	logger.debugf("SOCKET.close:fd=%d", fd)
+	handleSocketClose(fd)
+end
+
+function SOCKET.error(fd, msg)
+	logger.debugf("SOCKET.error:fd=%d,msg=%s", fd, msg)
+	handleSocketClose(fd)
+end
+
+function SOCKET.warning(fd, sz)
+	logger.debugf("SOCKET.warning:fd=%d,sz=%s", fd, sz)
 end
 
 local CMD = {}
@@ -174,3 +235,30 @@ function CMD.start()
 	skynet.timeout(100, onUpdate)
 end
 
+function CMD.HandClient(clientData)
+	skynet.send(gate, "lua", "forward_conn", skynet.self(), clientData.fd)
+
+	local oriClient = clientMap[clientData.accountId]
+	if oriClient then
+		if oriClient.agent then
+			-- 同账号客户端已进入游戏
+			oriClient:Update(clientData)
+			oriClient:ReenterGame()
+		else
+			-- 同账号客户端正在排队中
+			oriClient:Kick("handle_client,same account")
+			local newClient = clsClient.New(clientData)
+			newClient:Init()
+		end
+	else
+		local newClient = clsClient.New(clientData)
+		newClient:Init()
+	end
+end
+
+function GetCmdHandler(cmd)
+	return CMD[cmd]
+end
+
+function SystemStartup(module)
+end

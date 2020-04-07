@@ -13,15 +13,14 @@ local logger = require "common.logger"
 local config = require "config_system"
 local sproto_helper = require "common.sproto_helper"
 
-local c_rc4 = lrc4.new("pZ109jj2R9DmszDy")
+gate, agentmgr = false, false
 
 local clientMap = { }
 
 local function genSalt()
 	local a = math.random(1 << 31)
 	local b = math.random(1 << 31)
-	local c = math.random(1 << 31)
-	return string.format("%08x%08x%08x", a, b, c)
+	return string.format("%08x%08x", a, b)
 end
 
 -- 客户端
@@ -30,43 +29,47 @@ function clsClient.New(fd, address)
 	local o = {
 		fd = fd,
 		address = address,
+		accountId = nil,
 		salt = genSalt(),
 		userInfo = nil,
 		mq = skynet_queue(),
+		c_rc4 = lrc4.new("YGv93ebZywa96XdN"),
 	}
 	setmetatable(o, {__index = clsClient})
 	return o
 end
 
 function clsClient:HandShake(args)
+	logger.infof("hand_shake,operator=%s,channel=%s,platform=%s,openid=%s,appid=%s,os=%s,imei=%s,idfa=%s", 
+		tostring(args.operator), tostring(args.channel), tostring(args.platform), tostring(args.openId), tostring(args.appId), tostring(os), tostring(imei), tostring(idfa))
 	self.userInfo = args
 	return {code = 0, salt = self.salt, patch = config.client_patch}
 end
 
 function clsClient:Auth(args)
+	logger.infof("auth,data=%s", tostring(args.data))
+
 	--TODO: 处理登录超时
 	--TODO: 认证合法性
 	--TODO: 检查是否封号
-	local ok = true
-	if ok then
-		-- TODO: 校验成功
-		skynet.send(".agentmgr", "lua", "NewClient", self.fd, self)
-	else
-		-- TODO: 校验失败
-	end
+
+	-- 校验成功
+	self.mq = nil
+	self.c_rc4 = nil
+	self.accountId = tostring(self.userInfo.openId)
+	skynet.send(agentmgr, "lua", "HandClient", self)
 	self.finish = true
 	return {code = 0}
 end
 
-function clsClient:Release()
-	local fd = self.fd
-	clientMap[fd] = nil
-	skynet.send(".gate", "lua", "close", fd)
+function clsClient:closeFd(reason)
+	clientMap[self.fd] = nil
+	skynet.send(gate, "lua", "close_fd", skynet.self(), self.fd, reason)
 end
 
 function clsClient:SendBinMsg(msg)
 	if self.fd then
-		local packet, err = c_rc4:pack_with_len(msg)
+		local packet, err = lrc4.xor_pack(msg, 100)
 		if packet then
 			socket.write(self.fd, packet)
 		else
@@ -78,8 +81,7 @@ end
 function clsClient:HandleClientMsg(msg)
 	self.mq(function()
 		if self.finish then --认证结束
-			self:Release()
-			logger.errorf("dumplicated client login packet")
+			self:closeFd("dumplicated client login packet")
 			return
 		end
 
@@ -95,19 +97,21 @@ function clsClient:HandleClientMsg(msg)
 		end
 
 		if self.finish then
-			self:Release()
+			clientMap[self.fd] = nil
 		end
 	end)
 end
 
 local SOCKET = {}
 function SOCKET.data(fd, msg)
-	logger.debugf("SOCKET.data:fd=%d,msg=%s", fd, tostring(msg))
 	local client = clientMap[fd]
 	if not client then
+		logger.warningf("SOCKET.data:fd=%d,client is missing", fd)
 		return
 	end
-	client:HandleClientMsg(msg)
+	local rawMsg, err = client.c_rc4:unpack(msg)
+	logger.debugf("SOCKET.data:fd=%d,raw_msg=%s,raw_msg_len=%d", fd, tostring(rawMsg), #rawMsg)
+	client:HandleClientMsg(rawMsg)
 end
 
 function SOCKET.open(fd, address)

@@ -61,16 +61,16 @@ function CMD.login(args, cmdline)
 	end
 end
 
-function CMD.info(args, cmdline)
-
-end
-
 function CMD.send(args, cmdline)
-	local msg = args[1]
+	local msg = tonumber(args[1])
 	for _, robot in ipairs(selectRobotList) do
 		local addr = robot.Addr
-		skynet.send(addr, "lua", "Send", msg)
+		skynet.send(addr, "lua", "Send", cmdline)
 	end
+end
+
+function CMD.info(args, cmdline)
+
 end
 
 function CMD.disconnect(args, cmdline)

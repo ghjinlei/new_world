@@ -90,15 +90,15 @@ function MSG.open(fd, address)
 	end
 
 	--负载均衡,选择一个authd;
-	local authNum = #auth_list
-	if authNum == 0 then
+	local auth_num = #auth_list
+	if auth_num == 0 then
 		logger.errorf("msg.open has no authd")
 		socketdriver.close(fd)
 		return
 	end
 
 	auth_idx = auth_idx + 1
-	if auth_idx > authNum then
+	if auth_idx > auth_num then
 		auth_idx = 1
 	end
 
@@ -168,27 +168,36 @@ function CMD.close()
 	socket = nil
 end
 
-function CMD.forward(source, fd, client, address)
+function CMD.forward_agent(source, fd, client, address)
 	local c = assert(connection[fd])
-	c.client = client
-	c.agent = address
-	socketdriver.start(fd)
+	c.client = client or 0
+	c.agent = address or source
+	c.conn = nil
 end
 
--- 建立客户端连接
-function CMD.accept(source, fd)
-	if connection[fd] then
-		socketdriver.start(fd)
-	end
+function CMD.forward_conn(source, fd, client, address)
+	local c = assert(connection[fd])
+	c.client = client or 0
+	c.conn = address or source
+	c.agent = nil
 end
 
 -- 关闭客户端连接
-function CMD.kick(source, fd)
+function CMD.close_fd(source, fd, reason)
 	assert(fd and fd ~= socket)
-	logger.infof("gate_kick,source=%s,fd=%s", tostring(source), tostring(fd))
+	logger.infof("gate_close_fd,source=%s,fd=%s,reason=%s", tostring(source), tostring(fd), tostring(reason))
 
 	connection[fd].conn = nil
 	socketdriver.close(fd)
+end
+
+-- 强制关闭客户端连接
+function CMD.shutdown_fd(source, fd, reason)
+	assert(fd and fd ~= socket)
+	logger.infof("gate_shutdown_fd,source=%s,fd=%s,reason=%s", tostring(source), tostring(fd), tostring(reason))
+
+	connection[fd].conn = nil
+	socketdriver.shutdown(fd)
 end
 
 function CMD.set_auth_list(auths)

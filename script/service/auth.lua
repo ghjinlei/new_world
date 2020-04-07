@@ -12,6 +12,7 @@ local sproto_helper = require "common.sproto_helper"
 dofile("script/lualib/common/base/preload.lua")
 
 MAIN = GImport("lualib/auth/main.lua")
+MAIN.gate, MAIN.agentmgr = ...
 
 skynet.start(function()
 	print("init service start :auth ......")

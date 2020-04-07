@@ -38,7 +38,9 @@ end
 function Login()
 	local loginData = getLoginData()
 	GSOCK.SendMsg("AUTH_HandShake", loginData, function(args)
+		skynet.error("AUTH_HandShake callback!")
 		GSOCK.SendMsg("AUTH_Auth", {}, function(args)
+			skynet.error("AUTH_Auth callback!")
 			if args.code == 0 then
 				skynet.error("login success!")
 			end
@@ -50,6 +52,6 @@ local msgHandlers = {}
 
 function __init__(module, updated)
 	local sproto_helper = require "common.sproto_helper"
-	sproto_helper.RegMsgHandlers(msgHandlers)
+	sproto_helper.reg_msghandlers(msgHandlers)
 end
 

@@ -29,9 +29,11 @@ end
 
 function clsAgent:SendBinMsg(msg)
 	if self.fd then
-		local packet = string.pack(">s2", msg)
+		local packet, err = lrc4.xor_pack(msg, 100)
 		if packet then
 			socket.write(self.fd, packet)
+		else
+			logger.errorf("send_bin_msg error:%s", tostring(err))
 		end
 	end
 end
@@ -73,6 +75,10 @@ function clsAgent:handleFailed(msg)
 	skynet.send(agentmgr, "lua", "OnAgentDisconnect", self.key, skynet.self(), self.fd, false)
 	self:closeFd(msg)
 	self:Release()
+end
+
+function clsAgent:OnDisconnect()
+
 end
 
 function clsAgent:onRelease()
@@ -141,17 +147,37 @@ function CMD.start(fd, clientData, newClient)
 end
 
 local SOCKET = {}
-local function handleDisconnect(fd, reason)
+local function handleDisconnect(fd)
+	if not theAgent then
+		return false
+	end
+	if theAgent.fd ~= fd then
+		return false
+	end
+	return true
 end
 
-function SOCKET.disconnect(fd)
-	logger.debugf("SOCKET.disconnect:fd=%d", fd)
-	handleDisconnect(fd, "socket.disconnect")
+function SOCKET.close(fd)
+	logger.debugf("SOCKET.close:fd=%d", fd)
+	handleDisconnect(fd)
+end
+
+function SOCKET.error(fd, msg)
+	logger.debugf("SOCKET.error:fd=%d,msg=%s", fd, msg)
+	handleDisconnect(fd)
+end
+
+function SOCKET.warning(fd, sz)
+	logger.debugf("SOCKET.warning:fd=%d,sz=%s", fd, sz)
 end
 
 local CMD = {}
 function CMD.socket(cmd, ...)
 	return SOCKET[cmd](...)
+end
+
+function GetCmdHandler(cmd)
+	return CMD[cmd]
 end
 
 skynet.register_protocol {
@@ -160,12 +186,12 @@ skynet.register_protocol {
 	unpack = function(msg, sz)
 		return sproto_helper.dispatch(msg, sz)
 	end,
-	dispatch = function(fd, _, ok, type, ...)
-		assert(type == "REQUEST" and ok and theAgent and fd == theAgent.fd)	-- You can use fd to reply message
+	dispatch = function(fd, _, ok, type_, ...)
+		assert(type_ == "REQUEST" and ok and theAgent and fd == theAgent.fd)	-- You can use fd to reply message
 		skynet.ignoreret()	-- session is fd, don't call skynet.ret
 		skynet.trace()
 
-		local ok, result = sproto_helper.handle(theAgent, ...)
+		local ok, result = sproto_helper.handle_request(theAgent, ...)
 		if not ok then
 			return
 		end

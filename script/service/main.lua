@@ -5,6 +5,7 @@ local logger = require "common.logger"
 dofile("script/lualib/common/base/preload.lua")
 
 MAIN = GImport("lualib/main/main.lua")
+--TEST = GImport("lualib/test/main.lua")
 
 skynet.start(function()
 	print("init service start :main ......")

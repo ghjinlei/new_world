@@ -16,7 +16,7 @@ local openId = ...
 
 local TICK_INTERVAL = 200 -- 200毫秒一次tick
 local function tick()
-
+	GSOCK.Tick()
 	skynet.timeout(TICK_INTERVAL / 10, tick)
 end
 
@@ -32,17 +32,17 @@ function CMD.Login()
 	AUTH.Login()
 end
 
-function CMD.Send(msg)
-	GSOCK.Send(msg)
-end
-
 function CMD.Disconnect()
 	GSOCK.Disconnect()
 end
 
+function CMD.Send(msg)
+	GSOCK.Send(msg)
+end
+
 skynet.start(function()
 	local sproto_helper = require "common.sproto_helper"
-	sproto_helper.Init()
+	sproto_helper.init()
 	utils.DispatchLuaByCmd(CMD)
 
 	AUTH.SetOpenId(openId)

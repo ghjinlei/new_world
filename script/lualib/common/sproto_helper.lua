@@ -28,29 +28,55 @@ function sproto_helper.reg_msghandlers(handlers)
 	end
 end
 
+local session_handlers = {}
+function sproto_helper.reg_sessionhandler(session, handler)
+	session_handlers[session] = handler
+end
+
 function sproto_helper.dispatch(msg, sz)
 	return pcall(sproto_host.dispatch, sproto_host, msg, sz)
 end
 
 local empty_table = {}
-function sproto_helper.handle(userdata, name, args, response, ...)
+function sproto_helper.handle_request(userdata, name, args, response, ...)
 	local handler = msg_handlers[name]
 	if not handler then
 		return false, "sproto does not include" .. name
 	end
-	local ok, ret = xpcall(handler, __G_TRACE_BACK__, userdata, args, ...)
+
+	local ok, ret
+	if userdata then
+		ok, ret = xpcall(handler, __G_TRACE_BACK__, userdata, args, ...)
+	else
+		ok, ret = xpcall(handler, __G_TRACE_BACK__, args, ...)
+	end
 	return ok, response and response(ret or empty_table)
 end
 
+function sproto_helper.handle_response(userdata, session, args, ...)
+	local handler = session_handlers[session]
+	if not handler then
+		return false
+	end
+	local ok
+	if userdata then
+		ok = xpcall(handler, __G_TRACE_BACK__, userdata, args, ...)
+	else
+		ok = xpcall(handler, __G_TRACE_BACK__, args, ...)
+	end
+	return ok
+end
+
 function sproto_helper.dispatch_and_handle(userdata, msg, sz, ...)
-	local ok, type, name, args, response = sproto_helper.dispatch(msg, sz)
+	local ok, type_, name, args, response = sproto_helper.dispatch(msg, sz)
 	if not ok then
 		return false, "execute error"
 	end
-	if type ~= "REQUEST" then
-		return false, "bad proto direction"
+	if type_ == "REQUEST" then
+		return sproto_helper.handle_request(userdata, name, args, response, ...)
+	elseif type_ == "RESPONSE" then
+		return sproto_helper.handle_response(userdata, name, args, ...)
 	end
-	return sproto_helper.handle(userdata, name, args, response, ...)
 end
 
 function sproto_helper.pack_msg(proto_name, args, session)
