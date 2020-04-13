@@ -11,7 +11,7 @@ function Super(cls)
 end
 
 function GetClass(obj)
-	return mt = getmetatable(obj)
+	local mt = getmetatable(obj)
 	if mt then
 		return mt.__class
 	end
@@ -55,7 +55,7 @@ local function inheritWithCopy(baseCls, cls)
 end
 
 clsObject = {
-	__ClassName = "clsObject"
+	__ClassName = "clsObject",
 
 	Inherit = inheritWithCopy,
 }

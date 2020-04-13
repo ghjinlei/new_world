@@ -26,6 +26,7 @@ config.agentmgr = {}
 config.agentmgr.max_agent_count = 100
 config.agentmgr.agent_per_database = 10
 config.agentmgr.max_enter_per_batch = 10
+config.agentmgr.pre_alloc_agent_count = 10
 
 config.log = {}
 config.log.level = 1

@@ -169,20 +169,24 @@ function clsClient:Release()
 	clsClient.clientCount = clsClient.clientCount + 1
 end
 
-local function onUpdate()
+local function update()
 	if shutingdown then
 		return
 	end
 
 	local maxEnterCount = math.min(maxEnterPerBatch, maxAgentCount - getUseAgentCount())
 	for i = 1, maxEnterCount do
-		local client = clientQueue:Pop()
+		local accountId = clientQueue:Pop()
+		if not accountId then
+			break
+		end
+		client = clientMap[accountId]
 		client:EnterGame()
 	end
 
 	-- TODO:提示排队玩家具体名次
 
-	skynet.timeout(100, onUpdate)
+	skynet.timeout(100, update)
 end
 
 local SOCKET = {}
@@ -227,12 +231,12 @@ function CMD.start()
 
 	-- 预分配一定数量的agent
 	for i = 1, config_agentmgr.pre_alloc_agent_count or 0 do
-		local agent = skynet.newservice("agent", gate, skynet.self(), nexDB())
+		local agent = skynet.newservice("agent", gate, skynet.self(), nextDB())
 		freeAgent(agent)
 	end
 	totalAgentCount = #freeAgentPool
 
-	skynet.timeout(100, onUpdate)
+	skynet.timeout(100, update)
 end
 
 function CMD.HandClient(clientData)

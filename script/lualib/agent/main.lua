@@ -8,11 +8,12 @@ Description :
 local skynet = require "skynet"
 local socket = require "skynet.socket"
 local logger = require "common.logger"
+local config_system = require "config_system"
 local config_agent = config_system.agent or {}
 
 gate, agentmgr, database = false, false, false
 
-local theAgent = nil		--当前clsAgent对象
+local theAgent = false          --当前clsAgent对象
 
 local clsAgent = clsObject:Inherit()
 function clsAgent:onInit(fd, clientData)
@@ -87,11 +88,39 @@ function clsAgent:onRelease()
 	end
 end
 
---[[
-切入agent有以下几种情况
---]]
+
+local SOCKET = {}
+local function handleDisconnect(fd)
+	if not theAgent then
+		return false
+	end
+	if theAgent.fd ~= fd then
+		return false
+	end
+	return true
+end
+
+function SOCKET.close(fd)
+	logger.debugf("SOCKET.close:fd=%d", fd)
+	handleDisconnect(fd)
+end
+
+function SOCKET.error(fd, msg)
+	logger.debugf("SOCKET.error:fd=%d,msg=%s", fd, msg)
+	handleDisconnect(fd)
+end
+
+function SOCKET.warning(fd, sz)
+	logger.debugf("SOCKET.warning:fd=%d,sz=%s", fd, sz)
+end
+
+local CMD = {}
+function CMD.socket(cmd, ...)
+	return SOCKET[cmd](...)
+end
+
 function CMD.start(fd, clientData, newClient)
-	skynet.call(gate, "forward", fd)
+	skynet.call(gate, "forward_agent", skynet.self(), fd)
 	if newClient then
 		-- 新登录玩家
 		theAgent = clsAgent:New(fd, clientData)
@@ -144,36 +173,6 @@ function CMD.start(fd, clientData, newClient)
 	end
 
 	logger.debugf("agent.CMD.start success,fd=%d,key=%s", fd, tostring(clientData.key))
-end
-
-local SOCKET = {}
-local function handleDisconnect(fd)
-	if not theAgent then
-		return false
-	end
-	if theAgent.fd ~= fd then
-		return false
-	end
-	return true
-end
-
-function SOCKET.close(fd)
-	logger.debugf("SOCKET.close:fd=%d", fd)
-	handleDisconnect(fd)
-end
-
-function SOCKET.error(fd, msg)
-	logger.debugf("SOCKET.error:fd=%d,msg=%s", fd, msg)
-	handleDisconnect(fd)
-end
-
-function SOCKET.warning(fd, sz)
-	logger.debugf("SOCKET.warning:fd=%d,sz=%s", fd, sz)
-end
-
-local CMD = {}
-function CMD.socket(cmd, ...)
-	return SOCKET[cmd](...)
 end
 
 function GetCmdHandler(cmd)

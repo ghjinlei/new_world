@@ -1,20 +1,13 @@
 local skynet = require "skynet"
 require "skynet.manager"
 local fs = require "common.fs"
+local logger = require "common.logger"
 local config_system = require "config_system"
 dofile("script/lualib/common/base/preload.lua")
 
 local log_dirpath = config_system.log.dir
 local max_cache_count = config_system.log.cache_count or 1
 local log_shift_time = 3600 * 1
-
-local log_time_format = config_system.log.time_format or "%Y%m%d %H:%M:%S"
-local function gen_log_header(time_now_10ms, address)
-	local sec, decimals = math.modf(time_now_10ms)
-	local time_str = os.date(log_time_format, sec)
-	local tm10ms = math.floor(decimals * 100)
-	return string.format("[%s.%02d][:%08x]", time_str, tm10ms, address)
-end
 
 local function gen_log_filepath(time_now)
 	return string.format("%s/%s.log", log_dirpath, os.date("%Y%m%d%H", time_now))
@@ -38,7 +31,8 @@ function clslogger.new()
 end
 
 function clslogger:init()
-	self:add_log("[info]-----------------LOGGER START-----------------", 0)
+	local log = logger.format_log("-----------------LOGGER START-----------------", logger.loglevel_info, 0)
+	self:add_log(log)
 end
 
 function clslogger:open_log_file(time_now)
@@ -63,18 +57,14 @@ function clslogger:close_log_file()
 	end
 end
 
-function clslogger:add_log(msg, address)
-	local time_now_10ms = skynet.time()
-	local log_header = gen_log_header(time_now_10ms, address)
-	msg = log_header .. msg
-
-	local time_now = math.floor(time_now_10ms)
+function clslogger:add_log(log)
+	local time_now = math.floor(skynet.time())
 	if time_now - self._log_file_time >= log_shift_time then
 		self:open_log_file(time_now)
 	end
 
-	self._log_file:write(msg .. "\n")
-	self._log_size = self._log_size + #msg
+	self._log_file:write(log .. "\n")
+	self._log_size = self._log_size + #log
 	self._cache_count = self._cache_count + 1
 
 	-- 超过max_cache_count行刷新
@@ -91,7 +81,8 @@ function clslogger:flush()
 end
 
 function clslogger:close()
-	self:add_log("[info]-----------------LOGGER SHUTDOWN-----------------", 0)
+	local log = logger.format_log("-----------------LOGGER SHUTDOWN-----------------", logger.loglevel_info, 0)
+	self:add_log(log)
 	self:close_log_file()
 end
 --}} clslogger end
@@ -107,12 +98,22 @@ local function on_message(msg, address)
 		return
 	end
 
-	local tag = string.match(msg, "^%[(.-)%]")
-	if tag == "!shutdown" then
-		logger_obj:close(msg, address)
-		logger_obj = nil
+	local msg_len = #msg
+	if msg_len <= 3 then           -- 3字节以下为控制命令
+		if msg == logger.cmd_close then
+			logger_obj:close(msg, address)
+			logger_obj = nil
+		end
+		return
+	end
+
+	local fmt_log = string.match(msg, "^%[%d+%s%d+:%d+:%d+%.%d+%]")
+	if fmt_log then
+		logger_obj:add_log(msg)
 	else
-		logger_obj:add_log(msg, address)
+		local log = logger.format_log(msg, logger.loglevel_skynet, address)
+		logger_obj:add_log(log)
+		logger.print_console(log, logger.loglevel_skynet)
 	end
 end
 

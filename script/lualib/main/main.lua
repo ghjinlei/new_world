@@ -33,9 +33,9 @@ function Main()
 		local auth = skynet.newservice("auth", gate, agentmgr)
 		table.insert(authList, auth)
 	end
-
 	skynet.call(gate, "lua", "set_auth_list", authList)
 
+	skynet.call(agentmgr, "lua", "start")
 	-- gate需要最后开放
 	skynet.call(gate, "lua", "open")
 end

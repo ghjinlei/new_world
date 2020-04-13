@@ -19,14 +19,15 @@ function GDoScriptFile(relaPath)
 	xpcall(function()
 		local func, err = assert(GLoadFile(relaPath, _G))
 		m = func()
-	end, utils.traceback)
+	end, __G_TRACE_BACK__)
 	return m
 end
 
 local function loadGlobalFileList()
 	local globalFileList = {
-		"lualib/common/base/extend.lua",
 		"lualib/common/base/import.lua",
+		"lualib/common/base/class.lua",
+		"lualib/common/base/extend.lua",
 	}
 
 	for _, filePath in ipairs(globalFileList) do
