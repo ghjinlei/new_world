@@ -7,7 +7,7 @@ Description :
 --]]
 local skynet = require "skynet"
 local logger = require "common.logger"
-local lbullet = require "lbullet"
+local config_system = require "config_system"
 
 clsSceneMgr = clsObject:Inherit()
 

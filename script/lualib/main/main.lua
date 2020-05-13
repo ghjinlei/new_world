@@ -26,7 +26,7 @@ function Main()
 
 	gate = skynet.newservice("gate")
 
-	agentmgr = skynet.uniqueservice("agentmgr", gate)
+	agentmgr = skynet.newservice("agentmgr", gate)
 
 	-- 启动多个auth
 	for i = 1, config_auth.auth_count do

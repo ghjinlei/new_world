@@ -120,7 +120,7 @@ function CMD.socket(cmd, ...)
 end
 
 function CMD.start(fd, clientData, newClient)
-	skynet.call(gate, "forward_agent", skynet.self(), fd)
+	skynet.call(gate, "lua", "forward_agent", skynet.self(), fd)
 	if newClient then
 		-- 新登录玩家
 		theAgent = clsAgent:New(fd, clientData)

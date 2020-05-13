@@ -15,7 +15,7 @@ local maxAgentCount = config_agentmgr.max_agent_count
 local agentPerDatabase = config_agentmgr.agent_per_database
 local maxEnterPerBatch = config_agentmgr.max_enter_per_batch
 
-gate = ...
+gate = false
 
 local totalAgentCount = 0
 local freeAgentPool = {}

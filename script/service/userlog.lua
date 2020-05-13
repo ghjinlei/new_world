@@ -129,11 +129,9 @@ skynet.register_protocol {
 }
 
 skynet.start(function()
-	print("init service start :userlog ......")
 	xpcall(function()
 		init_log()
 	end, __G_TRACE_BACK__)
 
 	skynet.register ".logger"
-	print("init service finish :userlog")
 end)

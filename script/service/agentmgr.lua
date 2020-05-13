@@ -14,10 +14,8 @@ MAIN = GImport("lualib/agentmgr/main.lua")
 MAIN.gate = ...
 
 skynet.start(function()
-	print("init service start :agentmgr ......")
 	sproto_helper.init()
 	MAIN:SystemStartup()
 
 	utils.DispatchLuaByModule(MAIN)
-	print("init service finish :agentmgr")
 end)
