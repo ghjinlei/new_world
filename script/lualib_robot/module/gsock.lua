@@ -8,14 +8,14 @@ Description :
 local skynet = require "skynet"
 local socket = require "skynet.socket"
 local lrc4 = require "lrc4"
-local sproto_helper = require "common.sproto_helper"
+local sproto_helper = require "sproto_helper"
 
 local c_rc4 = lrc4.new("YGv93ebZywa96XdN")
 
 connFd = false
 recvBuffer = ""
 
-local function conn_read_loop()
+local function connReadLoop()
 	while connFd do
 		local data = socket.read(connFd)
 		if not data then
@@ -28,7 +28,7 @@ end
 
 function Connect(host, port)
 	connFd = socket.open(host, port)
-	skynet.fork(conn_read_loop)
+	skynet.fork(connReadLoop)
 end
 
 function Disconnect()

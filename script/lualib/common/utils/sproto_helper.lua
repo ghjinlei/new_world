@@ -1,6 +1,6 @@
 --[[
 ModuleName :
-Path : script/lualib/common/sproto_helper.lua
+Path : script/lualib/common/utils/sproto_helper.lua
 Author : jinlei
 CreateTime : 2019-06-26 20:48:15
 Description :

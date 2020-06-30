@@ -2,8 +2,8 @@ local skynet = require "skynet"
 local netpack = require "skynet.netpack"
 local socketdriver = require "skynet.socketdriver"
 local config_gate = require("config_system").gate
-local utils = require "common.utils"
-local logger = require "common.logger"
+local skynet_helper = require "common.utils.skynet_helper"
+local logger = require "common.utils.logger"
 dofile("script/lualib/common/base/preload.lua")
 
 local socket          -- listen socket
@@ -205,6 +205,6 @@ function CMD.set_auth_list(auths)
 end
 
 skynet.start(function()
-	utils.DispatchLuaByCmd(CMD)
+	skynet_helper.dispatch_lua_by_cmd(CMD)
 end)
 

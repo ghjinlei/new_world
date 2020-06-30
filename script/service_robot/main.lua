@@ -7,7 +7,7 @@ Description :
 --]]
 local skynet = require "skynet"
 local socket = require "skynet.socket"
-dofile("script/lualib/common/base/preload.lua")
+dofile("script/lualib_robot/base/preload.lua")
 
 local robotMap = {}
 local function addRobot(robotIdx1, robotIdx2)

@@ -21,7 +21,7 @@ function clsScene:SendScene(...)
 	skynet.send(self._addr, "lua", ...)
 end
 
-function clsScene:CallScene(....)
+function clsScene:CallScene(...)
 	return skynet.call(self._addr, "lua", ...)
 end
 

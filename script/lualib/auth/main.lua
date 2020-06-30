@@ -9,9 +9,9 @@ local skynet = require "skynet"
 local skynet_queue = require "skynet.queue"
 local socket = require "skynet.socket"
 local lrc4 = require "lrc4"
-local logger = require "common.logger"
+local logger = require "common.utils.logger"
 local config = require "config_system"
-local sproto_helper = require "common.sproto_helper"
+local sproto_helper = require "common.utils.sproto_helper"
 
 gate, agentmgr = false, false
 

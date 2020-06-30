@@ -7,7 +7,7 @@ Description :
 --]]
 local skynet = require "skynet"
 local lunix = require "lunix"
-local logger = require "common.logger"
+local logger = require "common.utils.logger"
 local config_system = require("config_system")
 local config_server = config_system.server
 local config_auth = config_system.auth

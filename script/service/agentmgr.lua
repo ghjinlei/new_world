@@ -6,8 +6,8 @@ CreateTime : 2018-11-11 02:13:31
 Description :
 --]]
 local skynet = require "skynet"
-local sproto_helper = require "common.sproto_helper"
-local utils = require "common.utils"
+local sproto_helper = require "common.utils.sproto_helper"
+local skynet_helper = require "common.utils.skynet_helper"
 dofile("script/lualib/common/base/preload.lua")
 
 MAIN = GImport("lualib/agentmgr/main.lua")
@@ -17,5 +17,5 @@ skynet.start(function()
 	sproto_helper.init()
 	MAIN:SystemStartup()
 
-	utils.DispatchLuaByModule(MAIN)
+	skynet_helper.dispatch_lua_by_module(MAIN)
 end)

@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 require "skynet.manager"
 local fs = require "common.fs"
-local logger = require "common.logger"
+local logger = require "common.utils.logger"
 local config_system = require "config_system"
 dofile("script/lualib/common/base/preload.lua")
 

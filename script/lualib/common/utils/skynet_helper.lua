@@ -1,15 +1,15 @@
 --[[
 ModuleName :
-Path : ../lualib/common/utils.lua
+Path : ../lualib/common/utils/skynet_helper.lua
 Author : jinlei
 CreateTime : 2018-11-11 02:37:51
 Description :
 --]]
 local skynet = require "skynet"
 local ltrace = require "ltrace"
-local logger = require "common.logger"
+local logger = require "common.utils.logger"
 
-local function pcallRet(session, ok, ...)
+local function pcall_ret(session, ok, ...)
 	if session ~= 0 then
 		if not ok then
 			skynet.ret()
@@ -19,18 +19,18 @@ local function pcallRet(session, ok, ...)
 	end
 end
 
-local utils = {}
+local skynet_helper = {}
 
-function utils.traceback(err)
+function skynet_helper.traceback(err)
 	local errMsg = err .. "\n" .. ltrace.traceback()
 	logger.error(errMsg)
 end
 
-function utils.DispatchLuaByCmd(CMD)
+function skynet_helper.dispatch_lua_by_cmd(CMD)
 	skynet.dispatch("lua", function(session, source, cmd, ...)
 		local f = CMD[cmd]
 		if f then
-			pcallRet(session, xpcall(f, utils.traceback, ...))
+			pcall_ret(session, xpcall(f, skynet_helper.traceback, ...))
 			return
 		end
 
@@ -42,12 +42,12 @@ function utils.DispatchLuaByCmd(CMD)
 	end)
 end
 
-function utils.DispatchLuaByModule(module)
+function skynet_helper.dispatch_lua_by_module(module)
 	assert(module and type(module.GetCmdHandler) == "function")
 	skynet.dispatch("lua", function(session, source, cmd, ...)
 		local func = module.GetCmdHandler(cmd)
 		if func then
-			pcallRet(session, xpcall(func, utils.traceback, ...))
+			pcall_ret(session, xpcall(func, skynet_helper.traceback, ...))
 			return
 		end
 		logger.errorf("drop command=%s from %08x session=%d:", cmd, source, session)
@@ -57,4 +57,4 @@ function utils.DispatchLuaByModule(module)
 	end)
 end
 
-return utils
+return skynet_helper

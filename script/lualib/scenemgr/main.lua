@@ -6,7 +6,7 @@ CreateTime : 2020-03-26 16:02:05
 Description :
 --]]
 local skynet = require "skynet"
-local logger = require "common.logger"
+local logger = require "common.utils.logger"
 local config_system = require "config_system"
 
 clsSceneMgr = clsObject:Inherit()

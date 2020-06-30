@@ -5,7 +5,7 @@ Author : jinlei
 CreateTime : 2019-05-21 14:16:12
 Description :
 --]]
-local skynet_helper = require "common.utils.skynet_helper"
+local skynet_helper = require "utils.skynet_helper"
 
 __G_TRACE_BACK__ = skynet_helper.traceback
 
@@ -25,9 +25,9 @@ end
 
 local function loadGlobalFileList()
 	local globalFileList = {
-		"lualib/common/base/import.lua",
-		"lualib/common/base/class.lua",
-		"lualib/common/base/extend.lua",
+		"lualib_robot/base/import.lua",
+		"lualib_robot/base/class.lua",
+		"lualib_robot/base/extend.lua",
 	}
 
 	for _, filePath in ipairs(globalFileList) do

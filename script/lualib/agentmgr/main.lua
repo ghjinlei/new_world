@@ -6,7 +6,7 @@ CreateTime : 2020-03-19 19:58:26
 Description :
 --]]
 local skynet = require "skynet"
-local logger = require "common.logger"
+local logger = require "common.utils.logger"
 local config_system = require "config_system"
 local config_agentmgr = config_system.agentmgr
 local socket = require "skynet.socket"

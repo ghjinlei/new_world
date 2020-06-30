@@ -6,11 +6,12 @@ CreateTime : 2019-05-22 16:31:33
 Description :
 --]]
 local skynet = require "skynet"
-local utils = require "common.utils"
-dofile("script/lualib/common/base/preload.lua")
+local skynet_helper = require "utils.skynet_helper"
+local sproto_helper = require "utils.sproto_helper"
+dofile("base/preload.lua")
 
-GSOCK = GImport("lualib/robot/gsock.lua")
-AUTH = GImport("lualib/robot/auth.lua")
+GSOCK = GImport("lualib_robot/module/gsock.lua")
+AUTH = GImport("lualib_robot/module/auth.lua")
 
 local openId = ...
 
@@ -41,9 +42,8 @@ function CMD.Send(msg)
 end
 
 skynet.start(function()
-	local sproto_helper = require "common.sproto_helper"
 	sproto_helper.init()
-	utils.DispatchLuaByCmd(CMD)
+	skynet_helper.dispatch_lua_by_cmd(CMD)
 
 	AUTH.SetOpenId(openId)
 	skynet.timeout(1, tick)

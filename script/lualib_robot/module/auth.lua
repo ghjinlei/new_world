@@ -51,7 +51,7 @@ end
 local msgHandlers = {}
 
 function __init__(module, updated)
-	local sproto_helper = require "common.sproto_helper"
+	local sproto_helper = require "common.utils.sproto_helper"
 	sproto_helper.reg_msghandlers(msgHandlers)
 end
 

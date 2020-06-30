@@ -7,7 +7,7 @@ Description :
 --]]
 local skynet = require "skynet"
 local socket = require "skynet.socket"
-local logger = require "common.logger"
+local logger = require "common.utils.logger"
 local config_system = require "config_system"
 local config_agent = config_system.agent or {}
 
