@@ -10,6 +10,7 @@ local socket = require "skynet.socket"
 local logger = require "common.utils.logger"
 local config_system = require "config_system"
 local config_agent = config_system.agent or {}
+local AGENT_STATE = GImport("lualib/agent/agent_state.lua")
 
 gate, agentmgr, database = false, false, false
 
@@ -26,6 +27,10 @@ function clsAgent:onInit(fd, clientData)
 	self.saveData = nil
 	self.saveDataDirty = nil
 	self.lastBeatTime = skynet.time()
+
+	self:CallFre(config_agent.delta_time_save_user, function()
+		self:saveUser2DB()
+	end)
 end
 
 function clsAgent:SendBinMsg(msg)
@@ -45,13 +50,13 @@ end
 
 function clsAgent:startCheckHeartBeat()
 	self:stopCheckHeartBeat()
-	local waitHeartBeatTime = config_agent.wait_heart_beat_time
-	if waitHeartBeatTime <= 0 then
+	local maxWaitHeartBeatTime = config_agent.max_wait_heart_beat_time
+	if maxWaitHeartBeatTime <= 0 then
 		return
 	end
 
-	self.heartBeatTimer = self:CallFre(waitHeartBeatTime, function()
-		if skynet.time() - self.lastBeatTime > waitHeartBeatTime then
+	self.heartBeatTimer = self:CallFre(maxWaitHeartBeatTime, function()
+		if skynet.time() - self.lastBeatTime > maxWaitHeartBeatTime then
 			self:stopCheckHeartBeat()
 			self:handleFailed("heartBeatTimer timeout")
 		end
@@ -62,6 +67,20 @@ function clsAgent:stopCheckHeartBeat()
 	if self.heartBeatTimer then
 		self:RemoveTimer(self.heartBeatTimer)
 		self.heartBeatTimer = nil
+	end
+end
+
+function clsAgent:saveUser2DB()
+	if not self._userSaveDataDirty then
+		return
+	end
+
+	-- 保存userid->userData
+	local userId, userSaveData = self._userId, self._userSaveData
+	if userId and userSaveData then
+		skynet.call(self._databased, "lua", "updateById", "usermap", userId, userSaveData)
+	else
+		logger.errorf("clsAgent:saveUser2DB failed,userid=%s", userId)
 	end
 end
 
@@ -124,10 +143,10 @@ function CMD.start(fd, clientData, newClient)
 	if newClient then
 		-- 新登录玩家
 		theAgent = clsAgent:New(fd, clientData)
-		if not agent_state.LoadingAccount.CheckEnter(theAgent) then
+		if not AGENT_STATE.LoadingAccount.CheckEnter(theAgent) then
 			return
 		end
-		if not agent_state.LoadingAccount.Enter(theAgent) then
+		if not AGENT_STATE.LoadingAccount.Enter(theAgent) then
 			return
 		end
 
@@ -136,10 +155,10 @@ function CMD.start(fd, clientData, newClient)
 			return
 		end
 
-		if not agent_state.ChoosingUser.CheckEnter(theAgent) then
+		if not AGENT_STATE.ChoosingUser.CheckEnter(theAgent) then
 			return
 		end
-		agent_state.ChoosingUser.Enter(theAgent)
+		AGENT_STATE.ChoosingUser.Enter(theAgent)
 	else
 		if not theAgent then
 			theAgent = clsAgent:New(fd, clientData)

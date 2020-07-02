@@ -42,7 +42,7 @@ function CMD.Send(msg)
 end
 
 skynet.start(function()
-	sproto_helper.init()
+	sproto_helper.load(1)
 	skynet_helper.dispatch_lua_by_cmd(CMD)
 
 	AUTH.SetOpenId(openId)

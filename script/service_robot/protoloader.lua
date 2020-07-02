@@ -1,14 +1,26 @@
---没有初始化logger,为了与robot公用;
 local skynet = require "skynet"
 local sprotoloader = require "sprotoloader"
 local sprotoparser = require "sprotoparser"
 
-local sproto_conf_c2s = require "sproto/proto_conf_c2s"
-local sproto_conf_s2c = require "sproto/proto_conf_s2c"
+local proto_conf_auth = require "sproto/proto_conf_auth"
+local proto_conf_game = require "sproto/proto_conf_game"
+
+local proto_idx = {
+	AUTH = 1,
+	AUTH_S2C = 1,
+	AUTH_C2S = 2,
+
+	GAME = 3,
+	GAME_S2C = 3,
+	GAME_C2S = 4,
+}
 
 skynet.start(function()
-	sprotoloader.save(sprotoparser.parse(sproto_conf_s2c), 1)
-	sprotoloader.save(sprotoparser.parse(sproto_conf_c2s), 2)
+	sprotoloader.save(sprotoparser.parse(proto_conf_auth.s2c), proto_idx.AUTH_S2C)
+	sprotoloader.save(sprotoparser.parse(proto_conf_auth.c2s), proto_idx.AUTH_C2S)
+
+	sprotoloader.save(sprotoparser.parse(proto_conf_game.s2c), proto_idx.GAME_S2C)
+	sprotoloader.save(sprotoparser.parse(proto_conf_game.c2s), proto_idx.GAME_C2S)
 
 	skynet.error("protoloader.lua finish")
 	-- don't call skynet.exit() , because sproto.core may unload and the global slot become invalid

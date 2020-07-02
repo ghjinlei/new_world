@@ -14,7 +14,7 @@ MAIN = GImport("lualib/agent/main.lua")
 MAIN.gate, MAIN.agentmgr, MAIN.database = ...
 
 skynet.start(function()
-	sproto_helper.init()
+	sproto_helper.load(3)
 	MAIN:SystemStartup()
 
 	skynet_helper.dispatch_lua_by_module(MAIN)

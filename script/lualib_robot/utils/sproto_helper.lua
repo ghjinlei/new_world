@@ -11,9 +11,9 @@ local sproto_request
 
 local sproto_helper = {}
 
-function sproto_helper.init()
-	sproto_host = sprotoloader.load(1):host "package"
-	sproto_request = sproto_host:attach(sprotoloader.load(2))
+function sproto_helper.load(index)
+	sproto_host = sprotoloader.load(index):host "package"
+	sproto_request = sproto_host:attach(sprotoloader.load(index + 2))
 end
 
 local msg_handlers = {}

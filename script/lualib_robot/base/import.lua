@@ -6,10 +6,10 @@ CreateTime : 2019-05-22 09:43:43
 Description :
 --]]
 
-_G.ImportModule = _G.ImportModule or {}
-local ImportModule = _G.ImportModule
-_G.ModuleList = _G.ModuleList or {}
-local ModuleList = _G.ModuleList
+_G.__importModule = _G.__importModule or {}
+local __importModule = _G.__importModule
+_G.__moduleList = _G.__moduleList or {}
+local __moduleList = _G.__moduleList
 
 _G.setfenv = _G.setfenv or function(f, t)
 	f = (type(f) == 'function' and f or debug.getinfo(f + 1, 'f').func)
@@ -36,7 +36,7 @@ local function callModuleInit(module, updated)
 end
 
 local function safeImport(relaPath, env)
-	local old = ImportModule[relaPath]
+	local old =i__ImportModule[relaPath]
 	if old then
 		return old
 	end
@@ -47,8 +47,8 @@ local function safeImport(relaPath, env)
 	end
 
 	local new = {__IS_MODULE__ = true}
-	ImportModule[relaPath] = new
-	table.insert(ModuleList, new)
+	__importModule[relaPath] = new
+	table.insert(__moduleList, new)
 
 	setmetatable(new, {__index = _G})
 	setfenv(func, new)()

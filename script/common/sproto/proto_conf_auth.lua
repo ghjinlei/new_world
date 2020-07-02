@@ -1,13 +1,9 @@
-local conf = [[
+local conf_auth = {}
+
+conf_auth.c2s = [[
 .package {
 	type      0 : integer
 	session   1 : integer
-}
-
-.position {
-	x         0 : integer
-	y         1 : integer
-	z         2 : integer
 }
 
 AUTH_HandShake 1 {
@@ -24,7 +20,7 @@ AUTH_HandShake 1 {
 	response {
 		code          0 : integer
 		msg           1 : string
-		sault         2 : string
+		salt          2 : string
 		patch         3 : string
 		serverSec     4 : integer
 		serverUsec    5 : integer
@@ -42,4 +38,12 @@ AUTH_Auth 2 {
 	}
 }
 ]]
-return conf
+
+conf_auth.s2c = [[
+.package {
+	type      0 : integer
+	session   1 : integer
+}
+]]
+
+return conf_auth

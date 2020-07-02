@@ -25,9 +25,12 @@ end
 
 local function loadGlobalFileList()
 	local globalFileList = {
-		"lualib/common/base/import.lua",
-		"lualib/common/base/class.lua",
-		"lualib/common/base/extend.lua",
+		"common/base/macro.lua",
+		"lualib/common/base/macro.lua",
+		"lualib/common/base/global.lua",
+		"common/base/import.lua",
+		"common/base/class.lua",
+		"common/base/extend.lua",
 	}
 
 	for _, filePath in ipairs(globalFileList) do
@@ -37,3 +40,6 @@ end
 
 loadGlobalFileList()
 
+TIME          = GImport("common/module/time.lua")
+SERV_TIMER    = GImport("lualib/common/module/serv_timer.lua")
+TIMER         = GImport("common/module/timer.lua")

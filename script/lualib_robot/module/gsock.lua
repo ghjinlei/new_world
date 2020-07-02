@@ -40,6 +40,10 @@ function Send(msg)
 	socket.write(connFd, packet)
 end
 
+function SetRC4Key(key)
+	c_rc4:reset(tostring(key))
+end
+
 local _sessionId = 0
 local function genSessionId()
 	_sessionId = (_sessionId + 1) % 65536

@@ -7,6 +7,7 @@ Description :
 --]]
 
 local skynet = require "skynet"
+local sproto_helper = require "common.utils.sproto_helper"
 
 local authData = {
 	openId = nil,
@@ -38,12 +39,17 @@ end
 function Login()
 	local loginData = getLoginData()
 	GSOCK.SendMsg("AUTH_HandShake", loginData, function(args)
+		local salt = args.salt
 		skynet.error("AUTH_HandShake callback!")
 		GSOCK.SendMsg("AUTH_Auth", {}, function(args)
 			skynet.error("AUTH_Auth callback!")
-			if args.code == 0 then
-				skynet.error("login success!")
+			if args.code ~= 0 then
+				skynet.error("login failed!")
 			end
+
+			skynet.error("login success!")
+			GSOCK.SetRC4Key(salt)
+			sproto_helper.load(3)
 		end)
 	end)
 end
